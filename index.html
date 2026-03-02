@@ -1,0 +1,1525 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Remix: Monthly Scrap Data Statistics V2.0</title>
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- React & ReactDOM -->
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    
+    <!-- Babel -->
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    
+    <!-- Prop Types -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prop-types/15.8.1/prop-types.min.js"></script>
+    
+    <!-- Recharts -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/recharts/2.12.7/Recharts.min.js"></script>
+    
+    <!-- PapaParse -->
+    <script src="https://unpkg.com/papaparse@5.3.0/papaparse.min.js"></script>
+    
+    <!-- html2canvas -->
+    <script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
+
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel" data-presets="typescript,react">
+        const { useState, useEffect, useRef } = React;
+        
+        // Ensure Recharts is loaded
+        if (!window.Recharts) {
+            console.error("Recharts is not loaded!");
+            document.body.innerHTML = '<div style="color:red; padding:20px;">Error: Recharts library failed to load. Please check your internet connection or try refreshing the page.</div>';
+            throw new Error("Recharts not found");
+        }
+        const { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } = window.Recharts;
+
+        // --- Utils ---
+        function cn(...inputs) {
+            return inputs.filter(Boolean).join(' ');
+        }
+
+        function getMonthName(monthStr, lang) {
+            const monthNum = parseInt(monthStr, 10);
+            if (lang === 'zh') {
+                return `${monthNum}月`;
+            } else {
+                const monthsEn = ["JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"];
+                return monthsEn[monthNum - 1] || monthStr;
+            }
+        }
+
+        // --- i18n ---
+        const translations = {
+            en: {
+                title: "ALL RUBBER SCRAP RATIO",
+                subtitle: "(MX / EX / CL / CT / CURING)",
+                chartTitle: "Scrap Ratio Trend",
+                tableTitle: "Detailed Monthly Data",
+                months: "Months",
+                category: "Category",
+                language: "Language",
+                primaryYear: "Primary Year",
+                compareYear: "Compare Year",
+            },
+            zh: {
+                title: "膠料總報廢率",
+                subtitle: "(混練 / 押出 / 上膠 / 裁斷 / 成型 / 加硫 / 膠檢)",
+                chartTitle: "報廢率趨勢",
+                tableTitle: "每月詳細數據",
+                months: "月份",
+                category: "分類",
+                language: "語言",
+                primaryYear: "主要年份",
+                compareYear: "比較年份",
+            }
+        };
+
+        const categories = [
+            "RUBBER ALL", "PLY ALL", "BW ALL", "CH ALL", "PLY/CH ALL",
+            "MX_RB", "MX_CB", "MX_CHM",
+            "CL_RB", "CL_PLY", "CL_FABRIC", "CL_CH",
+            "EX_RB",
+            "CT_RB", "CT_PLY", "CT_BW", "CT_CH",
+            "BD_RB", "BD_PLY", "BD_BW", "BD_CH",
+            "RSIP_RB", "RSIP_PLY", "RSIP_CH"
+        ];
+
+        const categoryNamesZh = {
+            "RUBBER ALL": "膠料總報廢",
+            "PLY ALL": "簾布總報廢",
+            "BW ALL": "鋼絲總報廢",
+            "CH ALL": "防擦布總報廢",
+            "PLY/CH ALL": "簾布/防擦布總報廢",
+            "MX_RB": "混練膠料報廢",
+            "MX_CB": "混練碳煙報廢",
+            "MX_CHM": "混練藥品報廢",
+            "CL_RB": "上膠膠料報廢",
+            "CL_PLY": "上膠簾布報廢",
+            "CL_FABRIC": "上膠原紗報廢",
+            "CL_CH": "上膠防擦布報廢",
+            "EX_RB": "押出膠料報廢",
+            "CT_RB": "裁斷膠料報廢",
+            "CT_PLY": "裁斷簾布報廢",
+            "CT_BW": "裁斷鋼絲報廢",
+            "CT_CH": "裁斷防擦布報廢",
+            "BD_RB": "成型膠料報廢",
+            "BD_PLY": "成型簾布報廢",
+            "BD_BW": "成型鋼絲報廢",
+            "BD_CH": "成型防擦布報廢",
+            "RSIP_RB": "膠檢膠料報廢",
+            "RSIP_PLY": "膠檢簾布報廢",
+            "RSIP_CH": "膠檢防擦布報廢"
+        };
+
+        const categoryNamesEn = {
+            "RUBBER ALL": "TOTAL RUBBER SCRAP",
+            "PLY ALL": "TOTAL PLY SCRAP",
+            "BW ALL": "TOTAL BEAD WIRE SCRAP",
+            "CH ALL": "TOTAL CHAFERS SCRAP",
+            "PLY/CH ALL": "TOTAL PLY/CHAFERS SCRAP",
+            "MX_RB": "MIXING RUBBER SCRAP",
+            "MX_CB": "MIXING CARBON BLACK SCRAP",
+            "MX_CHM": "MIXING CHEMICAL SCRAP",
+            "CL_RB": "CALENDERING RUBBER SCRAP",
+            "CL_PLY": "CALENDERING PLY SCRAP",
+            "CL_FABRIC": "CALENDERING FABRIC SCRAP",
+            "CL_CH": "CALENDERING CHAFERS SCRAP",
+            "EX_RB": "EXTRUDING RUBBER SCRAP",
+            "CT_RB": "CUTTING RUBBER SCRAP",
+            "CT_PLY": "CUTTING PLY SCRAP",
+            "CT_BW": "CUTTING BEAD WIRE SCRAP",
+            "CT_CH": "CUTTING CHAFERS SCRAP",
+            "BD_RB": "BUILDING RUBBER SCRAP",
+            "BD_PLY": "BUILDING PLY SCRAP",
+            "BD_BW": "BUILDING BEAD WIRE SCRAP",
+            "BD_CH": "BUILDING CHAFERS SCRAP",
+            "RSIP_RB": "RSIP RUBBER SCRAP",
+            "RSIP_PLY": "RSIP PLY SCRAP",
+            "RSIP_CH": "RSIP CHAFERS SCRAP"
+        };
+
+        // --- Data ---
+        const m = (total) => total ? {
+            mxRubber: Math.round(total * 0.15),
+            exRubber: Math.round(total * 0.08),
+            ctRubber: Math.round(total * 0.05),
+            clRubber: Math.round(total * 0.22),
+            curingRubber: Math.round(total * 0.30),
+            rispRubber: Math.round(total * 0.20),
+            totalScrapWeight: total,
+            totalScrapRatio: null,
+            prodWeight: null,
+        } : { mxRubber: null, exRubber: null, ctRubber: null, clRubber: null, curingRubber: null, rispRubber: null, totalScrapWeight: null, totalScrapRatio: null, prodWeight: null };
+
+        const fallbackData = [
+  {
+    month: "01",
+    data: {
+      "2026": { prodWeight: null, mxRubber: null, exRubber: null, ctRubber: null, clRubber: null, curingRubber: null, rispRubber: null, totalScrapWeight: null, totalScrapRatio: null },
+      "2025": { prodWeight: 2608004, mxRubber: 274, exRubber: 143, ctRubber: 57, clRubber: 260, curingRubber: 590, rispRubber: 403, totalScrapWeight: 1727, totalScrapRatio: 6.600 },
+      "2024": { prodWeight: 3019196, ...m(1523), totalScrapWeight: 1523, totalScrapRatio: 5.000 },
+      "2023": { prodWeight: 2950000, ...m(1400), totalScrapWeight: 1400, totalScrapRatio: 4.700 },
+    }
+  },
+  {
+    month: "02",
+    data: {
+      "2026": { prodWeight: null, mxRubber: null, exRubber: null, ctRubber: null, clRubber: null, curingRubber: null, rispRubber: null, totalScrapWeight: null, totalScrapRatio: null },
+      "2025": { prodWeight: 2278759, mxRubber: 250, exRubber: 120, ctRubber: 119, clRubber: 260, curingRubber: 590, rispRubber: 403, totalScrapWeight: 1743, totalScrapRatio: 7.700 },
+      "2024": { prodWeight: 3082797, ...m(1738), totalScrapWeight: 1738, totalScrapRatio: 5.600 },
+      "2023": { prodWeight: 2800000, ...m(1500), totalScrapWeight: 1500, totalScrapRatio: 5.300 },
+    }
+  },
+  {
+    month: "03",
+    data: {
+      "2026": { prodWeight: null, mxRubber: null, exRubber: null, ctRubber: null, clRubber: null, curingRubber: null, rispRubber: null, totalScrapWeight: null, totalScrapRatio: null },
+      "2025": { prodWeight: 1984596, mxRubber: 199, exRubber: 129, ctRubber: 76, clRubber: 250, curingRubber: 630, rispRubber: 210, totalScrapWeight: 1493, totalScrapRatio: 7.500 },
+      "2024": { prodWeight: 2811764, ...m(2028), totalScrapWeight: 2028, totalScrapRatio: 7.200 },
+      "2023": { prodWeight: 2700000, ...m(1800), totalScrapWeight: 1800, totalScrapRatio: 6.600 },
+    }
+  },
+  {
+    month: "04",
+    data: {
+      "2026": { prodWeight: null, mxRubber: null, exRubber: null, ctRubber: null, clRubber: null, curingRubber: null, rispRubber: null, totalScrapWeight: null, totalScrapRatio: null },
+      "2025": { prodWeight: 2519062, mxRubber: 584, exRubber: 120, ctRubber: 58, clRubber: 231, curingRubber: 740, rispRubber: 271, totalScrapWeight: 2003, totalScrapRatio: 8.000 },
+      "2024": { prodWeight: 3191762, ...m(2635), totalScrapWeight: 2635, totalScrapRatio: 8.300 },
+      "2023": { prodWeight: 3000000, ...m(2200), totalScrapWeight: 2200, totalScrapRatio: 7.300 },
+    }
+  },
+  {
+    month: "05",
+    data: {
+      "2026": { prodWeight: null, mxRubber: null, exRubber: null, ctRubber: null, clRubber: null, curingRubber: null, rispRubber: null, totalScrapWeight: null, totalScrapRatio: null },
+      "2025": { prodWeight: 3177614, mxRubber: 352, exRubber: 108, ctRubber: 73, clRubber: 387, curingRubber: 580, rispRubber: 400, totalScrapWeight: 1901, totalScrapRatio: 6.000 },
+      "2024": { prodWeight: 3096244, ...m(2095), totalScrapWeight: 2095, totalScrapRatio: 6.800 },
+      "2023": { prodWeight: 2900000, ...m(1900), totalScrapWeight: 1900, totalScrapRatio: 6.500 },
+    }
+  },
+  {
+    month: "06",
+    data: {
+      "2026": { prodWeight: null, mxRubber: null, exRubber: null, ctRubber: null, clRubber: null, curingRubber: null, rispRubber: null, totalScrapWeight: null, totalScrapRatio: null },
+      "2025": { prodWeight: 2759181, mxRubber: 857, exRubber: 135, ctRubber: 90, clRubber: 1187, curingRubber: 450, rispRubber: 297, totalScrapWeight: 3016, totalScrapRatio: 10.900 },
+      "2024": { prodWeight: 2410821, ...m(1249), totalScrapWeight: 1249, totalScrapRatio: 5.200 },
+      "2023": { prodWeight: 2500000, ...m(1300), totalScrapWeight: 1300, totalScrapRatio: 5.200 },
+    }
+  },
+  {
+    month: "07",
+    data: {
+      "2026": { prodWeight: null, mxRubber: null, exRubber: null, ctRubber: null, clRubber: null, curingRubber: null, rispRubber: null, totalScrapWeight: null, totalScrapRatio: null },
+      "2025": { prodWeight: 3168552, mxRubber: 402, exRubber: 161, ctRubber: 120, clRubber: 796, curingRubber: 590, rispRubber: 300, totalScrapWeight: 2369, totalScrapRatio: 7.500 },
+      "2024": { prodWeight: 3558901, ...m(1855), totalScrapWeight: 1855, totalScrapRatio: 5.200 },
+      "2023": { prodWeight: 3400000, ...m(1700), totalScrapWeight: 1700, totalScrapRatio: 5.000 },
+    }
+  },
+  {
+    month: "08",
+    data: {
+      "2026": { prodWeight: null, mxRubber: null, exRubber: null, ctRubber: null, clRubber: null, curingRubber: null, rispRubber: null, totalScrapWeight: null, totalScrapRatio: null },
+      "2025": { prodWeight: 3061308, mxRubber: 417, exRubber: 525, ctRubber: 81, clRubber: 169, curingRubber: 470, rispRubber: 270, totalScrapWeight: 1933, totalScrapRatio: 6.300 },
+      "2024": { prodWeight: 3105545, ...m(2072), totalScrapWeight: 2072, totalScrapRatio: 6.700 },
+      "2023": { prodWeight: 3000000, ...m(1900), totalScrapWeight: 1900, totalScrapRatio: 6.300 },
+    }
+  },
+  {
+    month: "09",
+    data: {
+      "2026": { prodWeight: null, mxRubber: null, exRubber: null, ctRubber: null, clRubber: null, curingRubber: null, rispRubber: null, totalScrapWeight: null, totalScrapRatio: null },
+      "2025": { prodWeight: 3107375, mxRubber: 262, exRubber: 145, ctRubber: 120, clRubber: 647, curingRubber: 270, rispRubber: 350, totalScrapWeight: 1794, totalScrapRatio: 5.800 },
+      "2024": { prodWeight: 2120634, ...m(1964), totalScrapWeight: 1964, totalScrapRatio: 9.300 },
+      "2023": { prodWeight: 2200000, ...m(1800), totalScrapWeight: 1800, totalScrapRatio: 8.100 },
+    }
+  },
+  {
+    month: "10",
+    data: {
+      "2026": { prodWeight: null, mxRubber: null, exRubber: null, ctRubber: null, clRubber: null, curingRubber: null, rispRubber: null, totalScrapWeight: null, totalScrapRatio: null },
+      "2025": { prodWeight: 2361554, mxRubber: 172, exRubber: 81, ctRubber: 94, clRubber: 47, curingRubber: 420, rispRubber: 261, totalScrapWeight: 1075, totalScrapRatio: 4.600 },
+      "2024": { prodWeight: 2414315, ...m(2155), totalScrapWeight: 2155, totalScrapRatio: 8.900 },
+      "2023": { prodWeight: 2500000, ...m(2000), totalScrapWeight: 2000, totalScrapRatio: 8.000 },
+    }
+  },
+  {
+    month: "11",
+    data: {
+      "2026": { prodWeight: null, mxRubber: null, exRubber: null, ctRubber: null, clRubber: null, curingRubber: null, rispRubber: null, totalScrapWeight: null, totalScrapRatio: null },
+      "2025": { prodWeight: null, mxRubber: null, exRubber: null, ctRubber: null, clRubber: null, curingRubber: null, rispRubber: null, totalScrapWeight: null, totalScrapRatio: null },
+      "2024": { prodWeight: 2743055, ...m(1633), totalScrapWeight: 1633, totalScrapRatio: 6.000 },
+      "2023": { prodWeight: 2600000, ...m(1500), totalScrapWeight: 1500, totalScrapRatio: 5.700 },
+    }
+  },
+  {
+    month: "12",
+    data: {
+      "2026": { prodWeight: null, mxRubber: null, exRubber: null, ctRubber: null, clRubber: null, curingRubber: null, rispRubber: null, totalScrapWeight: null, totalScrapRatio: null },
+      "2025": { prodWeight: null, mxRubber: null, exRubber: null, ctRubber: null, clRubber: null, curingRubber: null, rispRubber: null, totalScrapWeight: null, totalScrapRatio: null },
+      "2024": { prodWeight: 2787221, ...m(1633), totalScrapWeight: 1633, totalScrapRatio: 5.900 },
+      "2023": { prodWeight: 2700000, ...m(1550), totalScrapWeight: 1550, totalScrapRatio: 5.700 },
+    }
+  },
+];
+
+        // --- Data Service ---
+        const CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSUYQGdhyZVe--2uuwb4dgfi44pBg_Rk6yj7zdlNmWg0F_rAJg2z2V7gkBWHsGznsg-VsEWAjNeUG5q/pub?gid=0&single=true&output=csv";
+
+        async function fetchScrapData(category) {
+            return new Promise((resolve, reject) => {
+                Papa.parse(CSV_URL, {
+                    download: true,
+                    header: false,
+                    complete: (results) => {
+                        const rows = results.data;
+                        const dataRows = rows.slice(2);
+                        const monthlyDataMap = {};
+                        
+                        for (let i = 1; i <= 12; i++) {
+                            const monthStr = i.toString().padStart(2, "0");
+                            monthlyDataMap[monthStr] = {};
+                        }
+
+                        dataRows.forEach((row) => {
+                            if (!row[0] || !row[0].includes("/")) return;
+                            
+                            const [monthStr, yearStr] = row[0].split("/");
+                            if (!monthStr || !yearStr) return;
+                            
+                            const month = monthStr.padStart(2, "0");
+                            const year = yearStr;
+                            
+                            let scrap = null;
+                            let prodWeight = null;
+                            
+                            if (category === 'MX_RB') {
+                                scrap = parseFloat(row[1]) || null;
+                                prodWeight = parseFloat(row[2]) || null;
+                            } else if (category === 'MX_CB') {
+                                scrap = parseFloat(row[3]) || null;
+                                prodWeight = parseFloat(row[2]) || null;
+                            } else if (category === 'MX_CHM') {
+                                scrap = parseFloat(row[4]) || null;
+                                prodWeight = parseFloat(row[2]) || null;
+                            } else if (category === 'EX_RB') {
+                                scrap = parseFloat(row[5]) || null;
+                                prodWeight = parseFloat(row[6]) || null;
+                            } else if (category === 'CL_PLY') {
+                                scrap = parseFloat(row[7]) || null;
+                                prodWeight = parseFloat(row[8]) || null;
+                            } else if (category === 'CL_FABRIC') {
+                                scrap = parseFloat(row[9]) || null;
+                                prodWeight = parseFloat(row[10]) || null;
+                            } else if (category === 'CL_RB') {
+                                scrap = parseFloat(row[11]) || null;
+                                prodWeight = parseFloat(row[12]) || null;
+                            } else if (category === 'CL_CH') {
+                                scrap = parseFloat(row[12]) || null;
+                                prodWeight = parseFloat(row[14]) || null;
+                            } else if (category === 'CT_CH') {
+                                scrap = parseFloat(row[15]) || null;
+                                prodWeight = parseFloat(row[16]) || null;
+                            } else if (category === 'CT_RB') {
+                                scrap = parseFloat(row[17]) || null;
+                                prodWeight = parseFloat(row[18]) || null;
+                            } else if (category === 'CT_PLY') {
+                                scrap = parseFloat(row[19]) || null;
+                                prodWeight = parseFloat(row[20]) || null;
+                            } else if (category === 'CT_BW') {
+                                scrap = parseFloat(row[21]) || null;
+                                prodWeight = parseFloat(row[22]) || null;
+                            } else if (category === 'BD_RB') {
+                                scrap = parseFloat(row[23]) || null;
+                                prodWeight = parseFloat(row[24]) || null;
+                            } else if (category === 'BD_PLY') {
+                                scrap = parseFloat(row[25]) || null;
+                                prodWeight = parseFloat(row[26]) || null;
+                            } else if (category === 'BD_CH') {
+                                scrap = parseFloat(row[27]) || null;
+                                prodWeight = parseFloat(row[28]) || null;
+                            } else if (category === 'BD_BW') {
+                                scrap = parseFloat(row[29]) || null;
+                                prodWeight = parseFloat(row[30]) || null;
+                            } else if (category === 'RSIP_RB') {
+                                scrap = parseFloat(row[33]) || null;
+                                prodWeight = parseFloat(row[2]) || null;
+                            } else if (category === 'RSIP_PLY') {
+                                scrap = parseFloat(row[35]) || null;
+                                prodWeight = parseFloat(row[26]) || null;
+                            } else if (category === 'RSIP_CH') {
+                                scrap = parseFloat(row[37]) || null;
+                                prodWeight = parseFloat(row[28]) || null;
+                            } else if (category === 'RUBBER ALL') {
+                                const mxScrap = parseFloat(row[1]) || null;
+                                const exScrap = parseFloat(row[5]) || null;
+                                const clScrap = parseFloat(row[11]) || null;
+                                const ctScrap = parseFloat(row[13]) || null;
+                                const curingScrap = parseFloat(row[31]) || null;
+                                const rispScrap = parseFloat(row[33]) || null;
+                                
+                                const hasAnyScrap = mxScrap !== null || exScrap !== null || clScrap !== null || ctScrap !== null || curingScrap !== null || rispScrap !== null;
+                                if (hasAnyScrap) {
+                                scrap = (mxScrap || 0) + (exScrap || 0) + (clScrap || 0) + (ctScrap || 0) + (curingScrap || 0) + (rispScrap || 0);
+                                }
+                                prodWeight = parseFloat(row[2]) || null;
+                            } else if (category === 'PLY ALL') {
+                                const clPlyScrap = parseFloat(row[7]) || null;
+                                const ctPlyScrap = parseFloat(row[19]) || null;
+                                const bdPlyScrap = parseFloat(row[25]) || null;
+                                const rispPlyScrap = parseFloat(row[35]) || null;
+                                
+                                const hasAnyScrap = clPlyScrap !== null || ctPlyScrap !== null || bdPlyScrap !== null || rispPlyScrap !== null;
+                                if (hasAnyScrap) {
+                                scrap = (clPlyScrap || 0) + (ctPlyScrap || 0) + (bdPlyScrap || 0) + (rispPlyScrap || 0);
+                                }
+                                prodWeight = parseFloat(row[8]) || null;
+                            } else if (category === 'BW ALL') {
+                                const ctBwScrap = parseFloat(row[21]) || null;
+                                const bdBwScrap = parseFloat(row[29]) || null;
+                                
+                                const hasAnyScrap = ctBwScrap !== null || bdBwScrap !== null;
+                                if (hasAnyScrap) {
+                                scrap = (ctBwScrap || 0) + (bdBwScrap || 0);
+                                }
+                                prodWeight = parseFloat(row[22]) || null;
+                            } else if (category === 'CH ALL') {
+                                const ctChScrap = parseFloat(row[15]) || null;
+                                const bdChScrap = parseFloat(row[27]) || null;
+                                const rsipChScrap = parseFloat(row[37]) || null;
+                                
+                                const hasAnyScrap = ctChScrap !== null || bdChScrap !== null || rsipChScrap !== null;
+                                if (hasAnyScrap) {
+                                scrap = (ctChScrap || 0) + (bdChScrap || 0) + (rsipChScrap || 0);
+                                }
+                                prodWeight = parseFloat(row[16]) || null;
+                            } else if (category === 'PLY/CH ALL') {
+                                const clPlyScrap = parseFloat(row[7]) || null;
+                                const ctPlyScrap = parseFloat(row[19]) || null;
+                                const bdPlyScrap = parseFloat(row[25]) || null;
+                                const rispPlyScrap = parseFloat(row[35]) || null;
+                                
+                                const ctChScrap = parseFloat(row[15]) || null;
+                                const bdChScrap = parseFloat(row[27]) || null;
+                                const rsipChScrap = parseFloat(row[37]) || null;
+                                
+                                const hasAnyScrap = clPlyScrap !== null || ctPlyScrap !== null || bdPlyScrap !== null || rispPlyScrap !== null || ctChScrap !== null || bdChScrap !== null || rsipChScrap !== null;
+                                
+                                if (hasAnyScrap) {
+                                    scrap = (clPlyScrap || 0) + (ctPlyScrap || 0) + (bdPlyScrap || 0) + (rispPlyScrap || 0) + (ctChScrap || 0) + (bdChScrap || 0) + (rsipChScrap || 0);
+                                }
+                                
+                                const plyProd = parseFloat(row[8]) || 0;
+                                const chProd = parseFloat(row[16]) || 0;
+                                prodWeight = (plyProd + chProd) || null;
+                            }
+
+                            if (!monthlyDataMap[month]) {
+                                monthlyDataMap[month] = {};
+                            }
+                            
+                            monthlyDataMap[month][year] = {
+                                prodWeight: prodWeight,
+                                mxRubber: category === 'MX_RB' ? scrap : (category === 'RUBBER ALL' ? (parseFloat(row[1]) || null) : null),
+                                mxCbRubber: category === 'MX_CB' ? scrap : null,
+                                mxChmRubber: category === 'MX_CHM' ? scrap : null,
+                                exRubber: category === 'EX_RB' ? scrap : (category === 'RUBBER ALL' ? (parseFloat(row[5]) || null) : null),
+                                clPlyRubber: category === 'CL_PLY' ? scrap : (category === 'PLY ALL' ? (parseFloat(row[7]) || null) : null),
+                                clFabricRubber: category === 'CL_FABRIC' ? scrap : null,
+                                clRbRubber: category === 'CL_RB' ? scrap : null,
+                                clChRubber: category === 'CL_CH' ? scrap : null,
+                                ctChRubber: category === 'CT_CH' ? scrap : (category === 'CH ALL' ? (parseFloat(row[15]) || null) : null),
+                                ctRbRubber: category === 'CT_RB' ? scrap : null,
+                                ctPlyRubber: category === 'CT_PLY' ? scrap : (category === 'PLY ALL' ? (parseFloat(row[19]) || null) : null),
+                                ctBwRubber: category === 'CT_BW' ? scrap : (category === 'BW ALL' ? (parseFloat(row[21]) || null) : null),
+                                bdRbRubber: category === 'BD_RB' ? scrap : null,
+                                bdPlyRubber: category === 'BD_PLY' ? scrap : (category === 'PLY ALL' ? (parseFloat(row[25]) || null) : null),
+                                bdChRubber: category === 'BD_CH' ? scrap : (category === 'CH ALL' ? (parseFloat(row[27]) || null) : null),
+                                bdBwRubber: category === 'BD_BW' ? scrap : (category === 'BW ALL' ? (parseFloat(row[29]) || null) : null),
+                                ctRubber: category === 'RUBBER ALL' ? (parseFloat(row[13]) || null) : null,
+                                clRubber: category === 'RUBBER ALL' ? (parseFloat(row[11]) || null) : null,
+                                curingRubber: category === 'RUBBER ALL' ? (parseFloat(row[31]) || null) : null,
+                                rispRubber: category === 'RUBBER ALL' ? (parseFloat(row[33]) || null) : (category === 'RSIP_RB' ? scrap : null),
+                                exPlyRubber: null,
+                                rispPlyRubber: category === 'PLY ALL' ? (parseFloat(row[35]) || null) : (category === 'RSIP_PLY' ? scrap : null),
+                                rispChRubber: category === 'RSIP_CH' ? scrap : (category === 'CH ALL' ? (parseFloat(row[37]) || null) : null),
+                                rsipBwRubber: null,
+                                totalScrapWeight: scrap,
+                                totalScrapRatio: (scrap !== null && prodWeight !== null && prodWeight > 0) 
+                                ? (scrap / prodWeight) * 100 
+                                : null,
+                            };
+                        });
+
+                        const formattedData = Object.keys(monthlyDataMap)
+                            .sort()
+                            .map((month) => ({
+                                month,
+                                data: monthlyDataMap[month],
+                            }));
+                            
+                        resolve(formattedData);
+                    },
+                    error: (error) => {
+                        reject(error);
+                    }
+                });
+            });
+        }
+
+        // --- Components ---
+        // Chart Component
+        const Chart = ({ 
+            lang, 
+            category, 
+            primaryYear,
+            compareYear,
+            chartType,
+            data,
+            pointStyles,
+            onPointStyleChange
+        }) => {
+            const t = translations[lang];
+
+            const formatYAxis = (tickItem) => {
+                if (chartType === 'weight') {
+                    return Math.round(tickItem).toLocaleString("en-US");
+                }
+                return tickItem.toFixed(3);
+            };
+
+            const CustomTooltip = ({ active, payload, label }) => {
+                if (active && payload && payload.length) {
+                    return (
+                        <div className="bg-zinc-900 border border-zinc-700 p-3 rounded-lg shadow-lg z-50">
+                            <p className="text-zinc-300 mb-2">{label}</p>
+                            {payload.map((entry, index) => (
+                                <p key={index} style={{ color: entry.color }} className="text-sm font-medium">
+                                    {entry.name}: {chartType === 'weight' ? Math.round(entry.value).toLocaleString("en-US") : entry.value?.toFixed(3)}
+                                </p>
+                            ))}
+                        </div>
+                    );
+                }
+                return null;
+            };
+
+            const chartData = data.map(d => ({
+                month: getMonthName(d.month, lang),
+                originalMonth: d.month,
+                primaryValue: chartType === 'weight' ? d.data[primaryYear]?.totalScrapWeight : d.data[primaryYear]?.totalScrapRatio,
+                compareValue: chartType === 'weight' ? d.data[compareYear]?.totalScrapWeight : d.data[compareYear]?.totalScrapRatio,
+            }));
+
+            const CustomDot = (props) => {
+                const { cx, cy, stroke, payload, dataKey } = props;
+                if (!payload || !payload.originalMonth) return null;
+                
+                const value = payload[dataKey];
+                if (value === null || value === undefined) return null;
+
+                const year = dataKey === 'primaryValue' ? primaryYear : compareYear;
+                const month = payload.originalMonth;
+                const pointId = `${year}-${month}`;
+                const style = pointStyles[pointId];
+                const fillColor = style?.color || stroke;
+
+                return (
+                    <circle 
+                        cx={cx} 
+                        cy={cy} 
+                        r={6} 
+                        fill={fillColor} 
+                        stroke="white" 
+                        strokeWidth={2}
+                    />
+                );
+            };
+
+            const handleLabelClick = (year, month) => {
+                const pointId = `${year}-${month}`;
+                onPointStyleChange(prev => {
+                    const currentStyle = prev[pointId];
+                    if (currentStyle?.isRed) {
+                        const { isRed, ...rest } = currentStyle;
+                        return { ...prev, [pointId]: rest };
+                    } else {
+                        return { ...prev, [pointId]: { ...currentStyle, isRed: true } };
+                    }
+                });
+            };
+
+            const CustomLabelCompare = (props) => {
+                const { x, y, value, index, payload } = props;
+                if (value === null || value === undefined) return null;
+                
+                const dataPoint = payload || chartData[index];
+                if (!dataPoint || !dataPoint.originalMonth) return null;
+
+                const primaryVal = chartData[index]?.primaryValue;
+                
+                const isHigherOnScreen = primaryVal !== null && primaryVal !== undefined && value > primaryVal;
+                
+                const rectY = isHigherOnScreen ? -26 : 8;
+                const textY = isHigherOnScreen ? -13 : 21;
+                
+                const year = compareYear;
+                const month = dataPoint.originalMonth;
+                const pointId = `${year}-${month}`;
+                const style = pointStyles[pointId];
+                const isRed = style?.isRed;
+
+                return (
+                    <g transform={`translate(${x},${y})`} onClick={(e) => { e.stopPropagation(); handleLabelClick(year, month); }} style={{ cursor: 'pointer' }}>
+                        <rect x="-18" y={rectY} width="36" height="18" fill={isRed ? "#ff0000" : "#fff"} rx="2" ry="2" />
+                        <text x="0" y={textY} dy="0" fill={isRed ? "#fff" : "#000"} fontSize="11" fontWeight="bold" textAnchor="middle">
+                            {chartType === 'weight' ? Math.round(value).toLocaleString("en-US") : value.toFixed(3)}
+                        </text>
+                    </g>
+                );
+            };
+
+            const CustomLabelPrimary = (props) => {
+                const { x, y, value, index, payload } = props;
+                if (value === null || value === undefined) return null;
+                
+                const dataPoint = payload || chartData[index];
+                if (!dataPoint || !dataPoint.originalMonth) return null;
+
+                const compareVal = chartData[index]?.compareValue;
+                
+                const isHigherOnScreen = compareVal === null || compareVal === undefined || value >= compareVal;
+                
+                const rectY = isHigherOnScreen ? -26 : 8;
+                const textY = isHigherOnScreen ? -13 : 21;
+
+                const year = primaryYear;
+                const month = dataPoint.originalMonth;
+                const pointId = `${year}-${month}`;
+                const style = pointStyles[pointId];
+                const isRed = style?.isRed;
+
+                return (
+                    <g transform={`translate(${x},${y})`} onClick={(e) => { e.stopPropagation(); handleLabelClick(year, month); }} style={{ cursor: 'pointer' }}>
+                        <rect x="-18" y={rectY} width="36" height="18" fill={isRed ? "#ff0000" : "#00BFFF"} rx="2" ry="2" />
+                        <text x="0" y={textY} dy="0" fill={isRed ? "#fff" : "#000"} fontSize="11" fontWeight="bold" textAnchor="middle">
+                            {chartType === 'weight' ? Math.round(value).toLocaleString("en-US") : value.toFixed(3)}
+                        </text>
+                    </g>
+                );
+            };
+
+            const categoryName = lang === 'zh' ? (categoryNamesZh[category] || category) : (categoryNamesEn[category] || category);
+            const chartTypeName = lang === 'zh' 
+                ? (chartType === 'ratio' ? '報廢率' : '報廢重量') 
+                : (chartType === 'ratio' ? 'Scrap Ratio' : 'Scrap Weight');
+            const yearSuffix = lang === 'zh' ? '年' : '';
+
+            return (
+                <div className="w-full bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden flex-shrink-0 relative">
+                    <div className="p-4 lg:p-6 border-b border-gray-100 bg-gradient-to-r from-[#7bc97b] to-[#90EE90] flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
+                        <div className="flex flex-col lg:flex-row items-baseline gap-2">
+                            <h1 className="text-2xl lg:text-3xl font-bold text-gray-900 tracking-tight">
+                                {compareYear}{yearSuffix} / {primaryYear}{yearSuffix} {categoryName} {chartTypeName}
+                            </h1>
+                            <span className="text-gray-800 font-medium text-sm lg:text-base">
+                                {t.subtitle}
+                            </span>
+                        </div>
+                    </div>
+
+                    <div className="w-full h-[400px] bg-[#333333] p-4 relative">
+                        <div className="absolute top-4 right-8 flex items-center gap-4 text-sm font-bold z-10">
+                            <div className="flex items-center gap-2">
+                                <div className="w-4 h-1 bg-[#00BFFF]"></div>
+                                <span className="text-white">{primaryYear}</span>
+                            </div>
+                            <div className="flex items-center gap-2">
+                                <div className="w-4 h-1 bg-white"></div>
+                                <span className="text-white">{compareYear}</span>
+                            </div>
+                        </div>
+                        <ResponsiveContainer width="100%" height="100%">
+                            <LineChart
+                                data={chartData}
+                                margin={{ top: 40, right: 30, left: 20, bottom: 5 }}
+                            >
+                                <CartesianGrid strokeDasharray="3 3" stroke="#555" vertical={false} />
+                                <XAxis dataKey="month" stroke="#fff" tick={{ fill: "#fff", fontSize: 12 }} axisLine={{ stroke: "#fff" }} tickLine={false} />
+                                <YAxis stroke="#fff" tick={{ fill: "#fff", fontSize: 12 }} tickFormatter={formatYAxis} domain={[0, 'auto']} axisLine={false} tickLine={false} />
+                                <Tooltip content={<CustomTooltip />} />
+                                <Line 
+                                    type="monotone" 
+                                    dataKey="compareValue" 
+                                    name={compareYear} 
+                                    stroke="#ffffff" 
+                                    strokeWidth={2} 
+                                    dot={<CustomDot />}
+                                    activeDot={{ r: 6 }} 
+                                    connectNulls 
+                                    label={<CustomLabelCompare />} 
+                                />
+                                <Line 
+                                    type="monotone" 
+                                    dataKey="primaryValue" 
+                                    name={primaryYear} 
+                                    stroke="#00BFFF" 
+                                    strokeWidth={3} 
+                                    dot={<CustomDot />}
+                                    activeDot={{ r: 7 }} 
+                                    connectNulls 
+                                    label={<CustomLabelPrimary />} 
+                                />
+                            </LineChart>
+                        </ResponsiveContainer>
+                    </div>
+                </div>
+            );
+        };
+
+        // DataTable Component
+        const DataTable = ({ lang, primaryYear, compareYear, data, category, isCapturing, pointStyles, onPointStyleChange }) => {
+            const t = translations[lang];
+
+            const formatNumber = (num) => {
+                if (num === null || num === undefined) return "";
+                return Math.round(num).toLocaleString("en-US");
+            };
+
+            const formatRatio = (num) => {
+                if (num === null || num === undefined) return "";
+                return num.toFixed(3);
+            };
+
+            const handleCellClick = (uniqueId) => {
+                onPointStyleChange(prev => {
+                    const currentStyle = prev[uniqueId];
+                    if (currentStyle?.isRed) {
+                        const { isRed, ...rest } = currentStyle;
+                        return { ...prev, [uniqueId]: rest };
+                    } else {
+                        return { ...prev, [uniqueId]: { ...currentStyle, isRed: true } };
+                    }
+                });
+            };
+
+            const months = data.map((d) => getMonthName(d.month, lang));
+
+            const rows = [
+                {
+                    labelEn: `${primaryYear}_TOTAL Production Weight`,
+                    labelZh: `${primaryYear} 生產使用量總計`,
+                    getValue: (d) => d.data[primaryYear]?.prodWeight,
+                    formatter: formatNumber,
+                    year: primaryYear,
+                },
+                {
+                    labelEn: `${compareYear}_TOTAL Production Weight`,
+                    labelZh: `${compareYear} 生產使用量總計`,
+                    getValue: (d) => d.data[compareYear]?.prodWeight,
+                    formatter: formatNumber,
+                    year: compareYear,
+                },
+                ...(category === 'MX_RB' ? [
+                    {
+                        labelEn: `${primaryYear}_MX RUBBER`,
+                        labelZh: `${primaryYear} 混練膠料報廢`,
+                        getValue: (d) => d.data[primaryYear]?.mxRubber,
+                        formatter: formatNumber,
+                        year: primaryYear,
+                    },
+                    {
+                        labelEn: `${compareYear}_MX RUBBER`,
+                        labelZh: `${compareYear} 混練膠料報廢`,
+                        getValue: (d) => d.data[compareYear]?.mxRubber,
+                        formatter: formatNumber,
+                        year: compareYear,
+                    }
+                ] : []),
+                ...(category === 'MX_CB' ? [
+                    {
+                        labelEn: `${primaryYear}_MX CB`,
+                        labelZh: `${primaryYear} 混練碳煙報廢`,
+                        getValue: (d) => d.data[primaryYear]?.mxCbRubber,
+                        formatter: formatNumber,
+                        year: primaryYear,
+                    },
+                    {
+                        labelEn: `${compareYear}_MX CB`,
+                        labelZh: `${compareYear} 混練碳煙報廢`,
+                        getValue: (d) => d.data[compareYear]?.mxCbRubber,
+                        formatter: formatNumber,
+                        year: compareYear,
+                    }
+                ] : []),
+                ...(category === 'MX_CHM' ? [
+                    {
+                        labelEn: `${primaryYear}_MX CHM`,
+                        labelZh: `${primaryYear} 混練藥品報廢`,
+                        getValue: (d) => d.data[primaryYear]?.mxChmRubber,
+                        formatter: formatNumber,
+                        year: primaryYear,
+                    },
+                    {
+                        labelEn: `${compareYear}_MX CHM`,
+                        labelZh: `${compareYear} 混練藥品報廢`,
+                        getValue: (d) => d.data[compareYear]?.mxChmRubber,
+                        formatter: formatNumber,
+                        year: compareYear,
+                    }
+                ] : []),
+                ...(category === 'CL_PLY' ? [
+                    {
+                        labelEn: `${primaryYear}_CL PLY`,
+                        labelZh: `${primaryYear} 上膠簾布報廢`,
+                        getValue: (d) => d.data[primaryYear]?.clPlyRubber,
+                        formatter: formatNumber,
+                        year: primaryYear,
+                    },
+                    {
+                        labelEn: `${compareYear}_CL PLY`,
+                        labelZh: `${compareYear} 上膠簾布報廢`,
+                        getValue: (d) => d.data[compareYear]?.clPlyRubber,
+                        formatter: formatNumber,
+                        year: compareYear,
+                    }
+                ] : []),
+                ...(category === 'CL_FABRIC' ? [
+                    {
+                        labelEn: `${primaryYear}_CL FABRIC`,
+                        labelZh: `${primaryYear} 上膠原紗報廢`,
+                        getValue: (d) => d.data[primaryYear]?.clFabricRubber,
+                        formatter: formatNumber,
+                        year: primaryYear,
+                    },
+                    {
+                        labelEn: `${compareYear}_CL FABRIC`,
+                        labelZh: `${compareYear} 上膠原紗報廢`,
+                        getValue: (d) => d.data[compareYear]?.clFabricRubber,
+                        formatter: formatNumber,
+                        year: compareYear,
+                    }
+                ] : []),
+                ...(category === 'CL_RB' ? [
+                    {
+                        labelEn: `${primaryYear}_CL RB`,
+                        labelZh: `${primaryYear} 上膠膠料報廢`,
+                        getValue: (d) => d.data[primaryYear]?.clRbRubber,
+                        formatter: formatNumber,
+                        year: primaryYear,
+                    },
+                    {
+                        labelEn: `${compareYear}_CL RB`,
+                        labelZh: `${compareYear} 上膠膠料報廢`,
+                        getValue: (d) => d.data[compareYear]?.clRbRubber,
+                        formatter: formatNumber,
+                        year: compareYear,
+                    }
+                ] : []),
+                ...(category === 'CL_CH' ? [
+                    {
+                        labelEn: `${primaryYear}_CL CH`,
+                        labelZh: `${primaryYear} 上膠防擦布報廢`,
+                        getValue: (d) => d.data[primaryYear]?.clChRubber,
+                        formatter: formatNumber,
+                        year: primaryYear,
+                    },
+                    {
+                        labelEn: `${compareYear}_CL CH`,
+                        labelZh: `${compareYear} 上膠防擦布報廢`,
+                        getValue: (d) => d.data[compareYear]?.clChRubber,
+                        formatter: formatNumber,
+                        year: compareYear,
+                    }
+                ] : []),
+                ...(category === 'CT_CH' ? [
+                    {
+                        labelEn: `${primaryYear}_CT CH`,
+                        labelZh: `${primaryYear} 裁斷防擦布報廢`,
+                        getValue: (d) => d.data[primaryYear]?.ctChRubber,
+                        formatter: formatNumber,
+                        year: primaryYear,
+                    },
+                    {
+                        labelEn: `${compareYear}_CT CH`,
+                        labelZh: `${compareYear} 裁斷防擦布報廢`,
+                        getValue: (d) => d.data[compareYear]?.ctChRubber,
+                        formatter: formatNumber,
+                        year: compareYear,
+                    }
+                ] : []),
+                ...(category === 'CT_RB' ? [
+                    {
+                        labelEn: `${primaryYear}_CT RB`,
+                        labelZh: `${primaryYear} 裁斷防擦布報廢`,
+                        getValue: (d) => d.data[primaryYear]?.ctRbRubber,
+                        formatter: formatNumber,
+                        year: primaryYear,
+                    },
+                    {
+                        labelEn: `${compareYear}_CT RB`,
+                        labelZh: `${compareYear} 裁斷防擦布報廢`,
+                        getValue: (d) => d.data[compareYear]?.ctRbRubber,
+                        formatter: formatNumber,
+                        year: compareYear,
+                    }
+                ] : []),
+                ...(category === 'CT_PLY' ? [
+                    {
+                        labelEn: `${primaryYear}_CT PLY`,
+                        labelZh: `${primaryYear} 裁斷簾布報廢`,
+                        getValue: (d) => d.data[primaryYear]?.ctPlyRubber,
+                        formatter: formatNumber,
+                        year: primaryYear,
+                    },
+                    {
+                        labelEn: `${compareYear}_CT PLY`,
+                        labelZh: `${compareYear} 裁斷簾布報廢`,
+                        getValue: (d) => d.data[compareYear]?.ctPlyRubber,
+                        formatter: formatNumber,
+                        year: compareYear,
+                    }
+                ] : []),
+                ...(category === 'CT_BW' ? [
+                    {
+                        labelEn: `${primaryYear}_CT BW`,
+                        labelZh: `${primaryYear} 裁斷鋼絲報廢`,
+                        getValue: (d) => d.data[primaryYear]?.ctBwRubber,
+                        formatter: formatNumber,
+                        year: primaryYear,
+                    },
+                    {
+                        labelEn: `${compareYear}_CT BW`,
+                        labelZh: `${compareYear} 裁斷鋼絲報廢`,
+                        getValue: (d) => d.data[compareYear]?.ctBwRubber,
+                        formatter: formatNumber,
+                        year: compareYear,
+                    }
+                ] : []),
+                ...(category === 'BD_RB' ? [
+                    {
+                        labelEn: `${primaryYear}_BD RB`,
+                        labelZh: `${primaryYear} 成型膠料報廢`,
+                        getValue: (d) => d.data[primaryYear]?.bdRbRubber,
+                        formatter: formatNumber,
+                        year: primaryYear,
+                    },
+                    {
+                        labelEn: `${compareYear}_BD RB`,
+                        labelZh: `${compareYear} 成型膠料報廢`,
+                        getValue: (d) => d.data[compareYear]?.bdRbRubber,
+                        formatter: formatNumber,
+                        year: compareYear,
+                    }
+                ] : []),
+                ...(category === 'BD_PLY' ? [
+                    {
+                        labelEn: `${primaryYear}_BD PLY`,
+                        labelZh: `${primaryYear} 成型簾布報廢`,
+                        getValue: (d) => d.data[primaryYear]?.bdPlyRubber,
+                        formatter: formatNumber,
+                        year: primaryYear,
+                    },
+                    {
+                        labelEn: `${compareYear}_BD PLY`,
+                        labelZh: `${compareYear} 成型簾布報廢`,
+                        getValue: (d) => d.data[compareYear]?.bdPlyRubber,
+                        formatter: formatNumber,
+                        year: compareYear,
+                    }
+                ] : []),
+                ...(category === 'BD_CH' ? [
+                    {
+                        labelEn: `${primaryYear}_BD CH`,
+                        labelZh: `${primaryYear} 成型防擦布報廢`,
+                        getValue: (d) => d.data[primaryYear]?.bdChRubber,
+                        formatter: formatNumber,
+                        year: primaryYear,
+                    },
+                    {
+                        labelEn: `${compareYear}_BD CH`,
+                        labelZh: `${compareYear} 成型防擦布報廢`,
+                        getValue: (d) => d.data[compareYear]?.bdChRubber,
+                        formatter: formatNumber,
+                        year: compareYear,
+                    }
+                ] : []),
+                ...(category === 'BD_BW' ? [
+                    {
+                        labelEn: `${primaryYear}_BD BW`,
+                        labelZh: `${primaryYear} 成型鋼絲報廢`,
+                        getValue: (d) => d.data[primaryYear]?.bdBwRubber,
+                        formatter: formatNumber,
+                        year: primaryYear,
+                    },
+                    {
+                        labelEn: `${compareYear}_BD BW`,
+                        labelZh: `${compareYear} 成型鋼絲報廢`,
+                        getValue: (d) => d.data[compareYear]?.bdBwRubber,
+                        formatter: formatNumber,
+                        year: compareYear,
+                    }
+                ] : []),
+                ...(category === 'RSIP_RB' ? [
+                    {
+                        labelEn: `${primaryYear}_RSIP RB`,
+                        labelZh: `${primaryYear} 膠檢膠料報廢`,
+                        getValue: (d) => d.data[primaryYear]?.rispRubber,
+                        formatter: formatNumber,
+                        year: primaryYear,
+                    },
+                    {
+                        labelEn: `${compareYear}_RSIP RB`,
+                        labelZh: `${compareYear} 膠檢膠料報廢`,
+                        getValue: (d) => d.data[compareYear]?.rispRubber,
+                        formatter: formatNumber,
+                        year: compareYear,
+                    }
+                ] : []),
+                ...(category === 'RSIP_PLY' ? [
+                    {
+                        labelEn: `${primaryYear}_RSIP PLY`,
+                        labelZh: `${primaryYear} 膠檢簾布報廢`,
+                        getValue: (d) => d.data[primaryYear]?.rispPlyRubber,
+                        formatter: formatNumber,
+                        year: primaryYear,
+                    },
+                    {
+                        labelEn: `${compareYear}_RSIP PLY`,
+                        labelZh: `${compareYear} 膠檢簾布報廢`,
+                        getValue: (d) => d.data[compareYear]?.rispPlyRubber,
+                        formatter: formatNumber,
+                        year: compareYear,
+                    }
+                ] : []),
+                ...(category === 'RSIP_CH' ? [
+                    {
+                        labelEn: `${primaryYear}_RSIP CH`,
+                        labelZh: `${primaryYear} 膠檢防擦布報廢`,
+                        getValue: (d) => d.data[primaryYear]?.rispChRubber,
+                        formatter: formatNumber,
+                        year: primaryYear,
+                    },
+                    {
+                        labelEn: `${compareYear}_RSIP CH`,
+                        labelZh: `${compareYear} 膠檢防擦布報廢`,
+                        getValue: (d) => d.data[compareYear]?.rispChRubber,
+                        formatter: formatNumber,
+                        year: compareYear,
+                    }
+                ] : []),
+                ...(category === 'EX_RB' ? [
+                    {
+                        labelEn: `${primaryYear}_EX RUBBER`,
+                        labelZh: `${primaryYear} 押出膠料報廢`,
+                        getValue: (d) => d.data[primaryYear]?.exRubber,
+                        formatter: formatNumber,
+                        year: primaryYear,
+                    },
+                    {
+                        labelEn: `${compareYear}_EX RUBBER`,
+                        labelZh: `${compareYear} 押出膠料報廢`,
+                        getValue: (d) => d.data[compareYear]?.exRubber,
+                        formatter: formatNumber,
+                        year: compareYear,
+                    }
+                ] : []),
+                ...(category === 'RUBBER ALL' ? [
+                    {
+                        labelEn: `${primaryYear}_MX RUBBER`,
+                        labelZh: `${primaryYear} 混練膠料報廢`,
+                        getValue: (d) => d.data[primaryYear]?.mxRubber,
+                        formatter: formatNumber,
+                        year: primaryYear,
+                    },
+                    {
+                        labelEn: `${primaryYear}_EX RUBBER`,
+                        labelZh: `${primaryYear} 押出膠料報廢`,
+                        getValue: (d) => d.data[primaryYear]?.exRubber,
+                        formatter: formatNumber,
+                        year: primaryYear,
+                    },
+                    {
+                        labelEn: `${primaryYear}_CL RUBBER`,
+                        labelZh: `${primaryYear} 上膠膠料報廢`,
+                        getValue: (d) => d.data[primaryYear]?.clRubber,
+                        formatter: formatNumber,
+                        year: primaryYear,
+                    },
+                    {
+                        labelEn: `${primaryYear}_CT RUBBER`,
+                        labelZh: `${primaryYear} 裁斷膠料報廢`,
+                        getValue: (d) => d.data[primaryYear]?.ctRubber,
+                        formatter: formatNumber,
+                        year: primaryYear,
+                    },
+                    {
+                        labelEn: `${primaryYear}_CURING RUBBER`,
+                        labelZh: `${primaryYear} 加硫膠料報廢`,
+                        getValue: (d) => d.data[primaryYear]?.curingRubber,
+                        formatter: formatNumber,
+                        year: primaryYear,
+                    },
+                    {
+                        labelEn: `${primaryYear}_RISP RUBBER`,
+                        labelZh: `${primaryYear} 膠檢膠料報廢`,
+                        getValue: (d) => d.data[primaryYear]?.rispRubber,
+                        formatter: formatNumber,
+                        year: primaryYear,
+                    }
+                ] : []),
+                ...(category === 'PLY ALL' ? [
+                    {
+                        labelEn: `${primaryYear}_EX PLY`,
+                        labelZh: `${primaryYear} 押出簾布報廢`,
+                        getValue: (d) => d.data[primaryYear]?.exPlyRubber,
+                        formatter: formatNumber,
+                        year: primaryYear,
+                    },
+                    {
+                        labelEn: `${primaryYear}_CL PLY`,
+                        labelZh: `${primaryYear} 上膠簾布報廢`,
+                        getValue: (d) => d.data[primaryYear]?.clPlyRubber,
+                        formatter: formatNumber,
+                        year: primaryYear,
+                    },
+                    {
+                        labelEn: `${primaryYear}_CT PLY`,
+                        labelZh: `${primaryYear} 裁斷簾布報廢`,
+                        getValue: (d) => d.data[primaryYear]?.ctPlyRubber,
+                        formatter: formatNumber,
+                        year: primaryYear,
+                    },
+                    {
+                        labelEn: `${primaryYear}_BD PLY`,
+                        labelZh: `${primaryYear} 成型簾布報廢`,
+                        getValue: (d) => d.data[primaryYear]?.bdPlyRubber,
+                        formatter: formatNumber,
+                        year: primaryYear,
+                    },
+                    {
+                        labelEn: `${primaryYear}_RISP PLY`,
+                        labelZh: `${primaryYear} 膠檢簾布報廢`,
+                        getValue: (d) => d.data[primaryYear]?.rispPlyRubber,
+                        formatter: formatNumber,
+                        year: primaryYear,
+                    }
+                ] : []),
+                ...(category === 'BW ALL' ? [
+                    {
+                        labelEn: `${primaryYear}_CT BW`,
+                        labelZh: `${primaryYear} 裁斷鋼絲報廢`,
+                        getValue: (d) => d.data[primaryYear]?.ctBwRubber,
+                        formatter: formatNumber,
+                        year: primaryYear,
+                    },
+                    {
+                        labelEn: `${primaryYear}_BD BW`,
+                        labelZh: `${primaryYear} 成型鋼絲報廢`,
+                        getValue: (d) => d.data[primaryYear]?.bdBwRubber,
+                        formatter: formatNumber,
+                        year: primaryYear,
+                    },
+                    {
+                        labelEn: `${primaryYear}_RSIP BW`,
+                        labelZh: `${primaryYear} 膠檢鋼絲報廢`,
+                        getValue: (d) => d.data[primaryYear]?.rsipBwRubber,
+                        formatter: formatNumber,
+                        year: primaryYear,
+                    }
+                ] : []),
+                ...(category === 'CH ALL' ? [
+                    {
+                        labelEn: `${primaryYear}_CT CH`,
+                        labelZh: `${primaryYear} 裁斷防擦布報廢`,
+                        getValue: (d) => d.data[primaryYear]?.ctChRubber,
+                        formatter: formatNumber,
+                        year: primaryYear,
+                    },
+                    {
+                        labelEn: `${primaryYear}_BD CH`,
+                        labelZh: `${primaryYear} 成型防擦布報廢`,
+                        getValue: (d) => d.data[primaryYear]?.bdChRubber,
+                        formatter: formatNumber,
+                        year: primaryYear,
+                    },
+                    {
+                        labelEn: `${primaryYear}_RSIP CH`,
+                        labelZh: `${primaryYear} 膠檢防擦布報廢`,
+                        getValue: (d) => d.data[primaryYear]?.rispChRubber,
+                        formatter: formatNumber,
+                        year: primaryYear,
+                    }
+                ] : []),
+                ...(!['MX_RB', 'EX_RB', 'MX_CB', 'MX_CHM', 'CL_PLY', 'CL_FABRIC', 'CL_RB', 'CL_CH', 'CT_CH', 'CT_RB', 'CT_PLY', 'CT_BW', 'BD_RB', 'BD_PLY', 'BD_CH', 'BD_BW', 'RUBBER ALL', 'PLY ALL', 'RSIP_RB', 'RSIP_PLY', 'RSIP_CH', 'BW ALL', 'CH ALL'].includes(category) ? [
+                    {
+                        labelEn: `${primaryYear}_MX RUBBER`,
+                        labelZh: `${primaryYear} 混練膠料報廢`,
+                        getValue: (d) => d.data[primaryYear]?.mxRubber,
+                        formatter: formatNumber,
+                        year: primaryYear,
+                    },
+                    {
+                        labelEn: `${primaryYear}_EX RUBBER`,
+                        labelZh: `${primaryYear} 押出膠料報廢`,
+                        getValue: (d) => d.data[primaryYear]?.exRubber,
+                        formatter: formatNumber,
+                        year: primaryYear,
+                    },
+                    {
+                        labelEn: `${primaryYear}_CT RUBBER`,
+                        labelZh: `${primaryYear} 裁斷膠料報廢`,
+                        getValue: (d) => d.data[primaryYear]?.ctRubber,
+                        formatter: formatNumber,
+                        year: primaryYear,
+                    },
+                    {
+                        labelEn: `${primaryYear}_CL RUBBER`,
+                        labelZh: `${primaryYear} 上膠膠料報廢`,
+                        getValue: (d) => d.data[primaryYear]?.clRubber,
+                        formatter: formatNumber,
+                        year: primaryYear,
+                    },
+                    {
+                        labelEn: `${primaryYear}_CURING RUBBER`,
+                        labelZh: `${primaryYear} 加硫膠料報廢`,
+                        getValue: (d) => d.data[primaryYear]?.curingRubber,
+                        formatter: formatNumber,
+                        year: primaryYear,
+                    },
+                    {
+                        labelEn: `${primaryYear}_RISP RUBBER`,
+                        labelZh: `${primaryYear} 膠檢膠料報廢`,
+                        getValue: (d) => d.data[primaryYear]?.rispRubber,
+                        formatter: formatNumber,
+                        year: primaryYear,
+                    }
+                ] : []),
+                {
+                    labelEn: `${primaryYear}_TOTAL SCRAP Weight`,
+                    labelZh: `${primaryYear} 總報廢重量`,
+                    getValue: (d) => d.data[primaryYear]?.totalScrapWeight,
+                    formatter: formatNumber,
+                    className: "bg-[#00BFFF] text-black font-semibold",
+                    year: primaryYear,
+                },
+                {
+                    labelEn: `${compareYear}_TOTAL SCRAP Weight`,
+                    labelZh: `${compareYear} 總報廢重量`,
+                    getValue: (d) => d.data[compareYear]?.totalScrapWeight,
+                    formatter: formatNumber,
+                    year: compareYear,
+                },
+                {
+                    labelEn: `${primaryYear}_TOTAL SCRAP RATIO`,
+                    labelZh: `${primaryYear} 總報廢率`,
+                    getValue: (d) => d.data[primaryYear]?.totalScrapRatio,
+                    formatter: formatRatio,
+                    className: "bg-[#00BFFF] text-black font-semibold",
+                    year: primaryYear,
+                },
+                {
+                    labelEn: `${compareYear}_TOTAL SCRAP RATIO`,
+                    labelZh: `${compareYear} 總報廢率`,
+                    getValue: (d) => d.data[compareYear]?.totalScrapRatio,
+                    formatter: formatRatio,
+                    year: compareYear,
+                },
+            ];
+
+            return (
+                <div className={`w-full ${isCapturing ? 'h-auto overflow-visible' : 'h-full overflow-auto'}`}>
+                    <table className="w-full text-xs sm:text-sm border-collapse table-fixed">
+                        <thead className="sticky top-0 z-10">
+                            <tr className="bg-[#90EE90] shadow-sm">
+                                <th className="border border-gray-300 p-1 sm:p-3 text-left font-bold text-sm sm:text-lg w-[30%] sm:w-[250px] sticky left-0 bg-[#90EE90] z-20">
+                                    {t.months}
+                                </th>
+                                {months.map((month) => (
+                                    <th
+                                        key={month}
+                                        className="border border-gray-300 p-1 sm:p-3 text-center font-medium"
+                                    >
+                                        {month}
+                                    </th>
+                                ))}
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {rows.map((row, idx) => {
+                                const isCompareRow = row.labelEn.startsWith(compareYear);
+                                return (
+                                    <tr key={idx} className={`transition-colors ${isCompareRow ? 'bg-orange-50 hover:bg-orange-100' : 'bg-white hover:bg-gray-50'}`}>
+                                        <td
+                                            className={cn(
+                                                "border border-gray-300 p-1 sm:p-3 whitespace-pre-line text-[10px] sm:text-xs sticky left-0 z-10 break-words",
+                                                row.className,
+                                                isCompareRow ? 'bg-orange-50' : 'bg-white'
+                                            )}
+                                        >
+                                            {lang === 'en' ? row.labelEn : row.labelZh}
+                                        </td>
+                                        {data.map((d, colIdx) => {
+                                            const isHighlighted = row.className?.includes("bg-[#00BFFF]");
+                                            const cellValue = row.getValue(d);
+                                            // Use unique ID for each cell to ensure single cell highlighting
+                                            const pointId = `${row.labelEn}-${d.month}`;
+                                            const isRed = pointStyles && pointStyles[pointId]?.isRed;
+
+                                            return (
+                                                <td
+                                                    key={d.month}
+                                                    className={cn(
+                                                        "border border-gray-300 p-1 sm:p-3 text-center text-[10px] sm:text-sm break-all cursor-pointer",
+                                                        isHighlighted ? "bg-[#00BFFF]/20 text-blue-900 font-semibold" : "text-gray-700",
+                                                        isRed ? "!bg-red-500 !text-white" : ""
+                                                    )}
+                                                    onClick={() => handleCellClick(pointId)}
+                                                >
+                                                    {row.formatter(cellValue)}
+                                                </td>
+                                            );
+                                        })}
+                                    </tr>
+                                );
+                            })}
+                        </tbody>
+                    </table>
+                </div>
+            );
+        };
+
+        // Dashboard Component
+        const Dashboard = () => {
+            const currentYear = new Date().getFullYear().toString();
+            const prevYear = (new Date().getFullYear() - 1).toString();
+            
+            const [lang, setLang] = useState('zh');
+            const [category, setCategory] = useState('RUBBER ALL');
+            const [primaryYear, setPrimaryYear] = useState(currentYear);
+            const [compareYear, setCompareYear] = useState(prevYear);
+            const [chartType, setChartType] = useState('ratio');
+            const [chartData, setChartData] = useState(fallbackData);
+            const [loading, setLoading] = useState(false);
+            const [isCapturing, setIsCapturing] = useState(false);
+            const [pointStyles, setPointStyles] = useState({});
+            const captureRef = useRef(null);
+            
+            const t = translations[lang];
+
+            useEffect(() => {
+                setPointStyles({});
+            }, [category]);
+
+            const handleScreenshot = async () => {
+                if (!captureRef.current) return;
+                setIsCapturing(true);
+                
+                const scrollY = window.scrollY;
+                
+                try {
+                    window.scrollTo(0, 0);
+                    await new Promise(resolve => setTimeout(resolve, 300));
+                    
+                    const canvas = await html2canvas(captureRef.current, {
+                        scale: 2,
+                        backgroundColor: '#f9fafb',
+                        logging: false,
+                        useCORS: true,
+                        allowTaint: true,
+                        windowWidth: captureRef.current.scrollWidth,
+                        windowHeight: captureRef.current.scrollHeight,
+                    });
+                    
+                    canvas.toBlob(async (blob) => {
+                        try {
+                            if (navigator.clipboard && navigator.clipboard.write) {
+                                const item = new ClipboardItem({ 'image/png': blob });
+                                await navigator.clipboard.write([item]);
+                                alert(lang === 'zh' ? "截圖已複製到剪貼簿！" : "Screenshot copied to clipboard!");
+                            } else {
+                                throw new Error("Clipboard API not supported");
+                            }
+                        } catch (err) {
+                            console.error("Failed to copy: ", err);
+                            alert(lang === 'zh' ? "複製失敗，您的瀏覽器不支援此功能。" : "Failed to copy. Your browser does not support this feature.");
+                        }
+                    }, 'image/png');
+
+                } catch (err) {
+                    console.error("Screenshot failed", err);
+                } finally {
+                    setIsCapturing(false);
+                    window.scrollTo(0, scrollY);
+                }
+            };
+
+            useEffect(() => {
+                if (['MX_RB', 'EX_RB', 'MX_CB', 'MX_CHM', 'CL_PLY', 'CL_FABRIC', 'CL_RB', 'CL_CH', 'CT_CH', 'CT_RB', 'CT_PLY', 'CT_BW', 'BD_RB', 'BD_PLY', 'BD_CH', 'BD_BW', 'RUBBER ALL', 'PLY ALL', 'RSIP_RB', 'RSIP_PLY', 'RSIP_CH', 'BW ALL', 'CH ALL'].includes(category)) {
+                    setLoading(true);
+                    fetchScrapData(category)
+                        .then(data => {
+                            setChartData(data);
+                            setLoading(false);
+                        })
+                        .catch(err => {
+                            console.error("Failed to fetch data", err);
+                            setLoading(false);
+                        });
+                } else {
+                    setChartData(fallbackData);
+                }
+            }, [category]);
+
+            const availableYears = ["2026", "2025", "2024", "2023"];
+
+            return (
+                <div className="min-h-screen bg-gray-50 text-black font-sans flex flex-col">
+                    {/* Controls Bar */}
+                    <div className="bg-white border-b border-gray-200 p-4 sticky top-0 z-50 shadow-sm">
+                        <div className="max-w-[1920px] mx-auto flex flex-wrap gap-4 items-center justify-between">
+                            <div className="flex flex-wrap gap-3 items-center">
+                                <div className="flex items-center gap-2">
+                                    <label className="text-sm font-bold text-gray-800 whitespace-nowrap">{t.primaryYear}:</label>
+                                    <select 
+                                        value={primaryYear} 
+                                        onChange={(e) => {
+                                            const newPrimaryYear = e.target.value;
+                                            setPrimaryYear(newPrimaryYear);
+                                            const newCompareYear = (parseInt(newPrimaryYear) - 1).toString();
+                                            if (availableYears.includes(newCompareYear)) {
+                                                setCompareYear(newCompareYear);
+                                            }
+                                        }}
+                                        className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-md focus:ring-blue-500 focus:border-blue-500 block p-2 font-medium shadow-sm outline-none"
+                                    >
+                                        {availableYears.map(y => <option key={y} value={y}>{y}</option>)}
+                                    </select>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                    <label className="text-sm font-bold text-gray-800 whitespace-nowrap">{t.compareYear}:</label>
+                                    <select 
+                                        value={compareYear} 
+                                        onChange={(e) => setCompareYear(e.target.value)}
+                                        className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-md focus:ring-blue-500 focus:border-blue-500 block p-2 font-medium shadow-sm outline-none"
+                                    >
+                                        {availableYears.map(y => <option key={y} value={y}>{y}</option>)}
+                                    </select>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                    <label className="text-sm font-bold text-gray-800 whitespace-nowrap">{t.category}:</label>
+                                    <select 
+                                        value={category} 
+                                        onChange={(e) => setCategory(e.target.value)}
+                                        className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-md focus:ring-blue-500 focus:border-blue-500 block p-2 font-medium shadow-sm outline-none"
+                                    >
+                                        {categories.map(c => <option key={c} value={c}>{c}</option>)}
+                                    </select>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                    <label className="text-sm font-bold text-gray-800 whitespace-nowrap">{lang === 'zh' ? '圖表類型' : 'Chart Type'}:</label>
+                                    <select 
+                                        value={chartType} 
+                                        onChange={(e) => setChartType(e.target.value)}
+                                        className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-md focus:ring-blue-500 focus:border-blue-500 block p-2 font-medium shadow-sm outline-none"
+                                    >
+                                        <option value="ratio">{lang === 'zh' ? '報廢率 (%)' : 'Scrap Ratio (%)'}</option>
+                                        <option value="weight">{lang === 'zh' ? '報廢重量 (KG)' : 'Scrap Weight (KG)'}</option>
+                                    </select>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                    <label className="text-sm font-bold text-gray-800 whitespace-nowrap">{t.language}:</label>
+                                    <select 
+                                        value={lang} 
+                                        onChange={(e) => setLang(e.target.value)}
+                                        className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-md focus:ring-blue-500 focus:border-blue-500 block p-2 font-medium shadow-sm outline-none"
+                                    >
+                                        <option value="zh">繁體中文</option>
+                                        <option value="en">English</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <button
+                                onClick={handleScreenshot}
+                                className="flex items-center gap-2 px-3 py-2 bg-blue-600 text-white text-sm font-medium rounded-md hover:bg-blue-700 transition-colors shadow-sm ml-2"
+                                title={lang === 'zh' ? '複製截圖' : 'Copy Screenshot'}
+                            >
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+                                {lang === 'zh' ? '複製' : 'Copy'}
+                            </button>
+                            <button
+                                onClick={() => setPointStyles({})}
+                                className="flex items-center gap-2 px-3 py-2 bg-red-500 text-white text-sm font-medium rounded-md hover:bg-red-600 transition-colors shadow-sm ml-2"
+                                title={lang === 'zh' ? '清除所有標記' : 'Clear All Highlights'}
+                            >
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 6h18"></path><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"></path><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"></path></svg>
+                                {lang === 'zh' ? '清除' : 'Clear'}
+                            </button>
+                        </div>
+                    </div>
+
+                    <div 
+                        ref={captureRef}
+                        className={`flex-1 p-4 lg:p-6 max-w-[1920px] mx-auto w-full flex flex-col gap-6 ${isCapturing ? 'h-auto overflow-visible' : ''}`}
+                    >
+                        <Chart 
+                            lang={lang} 
+                            category={category} 
+                            primaryYear={primaryYear}
+                            compareYear={compareYear}
+                            chartType={chartType}
+                            data={chartData}
+                            pointStyles={pointStyles}
+                            onPointStyleChange={setPointStyles}
+                        />
+                        
+                        <div className={`w-full bg-white rounded-2xl shadow-sm border-2 border-gray-400 flex-col relative ${isCapturing ? 'flex-none h-auto overflow-visible' : 'flex-1 overflow-hidden flex'}`}>
+                            {loading && (
+                                <div className="absolute inset-0 bg-white/50 backdrop-blur-sm z-50 flex items-center justify-center">
+                                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
+                                </div>
+                            )}
+                            <div className="p-4 border-b-2 border-gray-300 bg-gray-50/50">
+                                <h2 className="text-lg font-bold text-gray-900">
+                                    {compareYear}{lang === 'zh' ? '年' : ''}/{primaryYear}{lang === 'zh' ? '年' : ''} {lang === 'zh' ? (categoryNamesZh[category] || category) : (categoryNamesEn[category] || category)} {t.tableTitle}
+                                </h2>
+                            </div>
+                            <div className={isCapturing ? 'overflow-visible' : 'flex-1 overflow-auto'}>
+                                <DataTable 
+                                    lang={lang} 
+                                    primaryYear={primaryYear} 
+                                    compareYear={compareYear} 
+                                    data={chartData}
+                                    category={category}
+                                    isCapturing={isCapturing}
+                                    pointStyles={pointStyles}
+                                    onPointStyleChange={setPointStyles}
+                                />
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
+        // --- App & Render ---
+        const App = () => <Dashboard />;
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>
