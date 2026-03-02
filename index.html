@@ -717,6 +717,180 @@
                 });
             };
 
+            const fetchAndShowDetails = async (e) => {
+                // Item one: identify the table body cells containing the numerical scrap data and attach a javascript click event listener to them
+                const cell = e.currentTarget;
+                
+                // Item two: upon a click event retrieve the month value from the table header cell corresponding to the clicked column index
+                const colIndex = cell.cellIndex;
+                const table = cell.closest('table');
+                const headerCell = table.rows[0].cells[colIndex];
+                const monthText = headerCell.textContent.trim();
+                
+                // Item three: retrieve the text content from the first cell of the clicked row to identify the year the section and the scrap type
+                const row = cell.closest('tr');
+                const firstCellText = row.cells[0].textContent.trim();
+                
+                let year = "";
+                let section = "";
+                let scrapType = "";
+                
+                const parts = firstCellText.split(/[_ ]/);
+                if (parts.length >= 1) year = parts[0];
+                if (parts.length >= 2) section = parts[1];
+                if (parts.length >= 3) scrapType = parts.slice(2).join(" ");
+                
+                // Item four: construct a search string combining the extracted month and year to match the exact text format found in the first column of your google sheet data
+                // Since colIndex 0 is the row label, colIndex 1 corresponds to month 1, colIndex 2 to month 2, etc.
+                const monthNum = String(colIndex).padStart(2, '0');
+                const searchString = `${year}-${monthNum}`;
+                
+                // Item five: utilize the javascript fetch api to request the detail data from your google apps script web app endpoint
+                const GAS_URL = "https://script.google.com/macros/s/AKfycbwPfPWC8sPVCM0whUDlYfhKraQuROo_pvUhZ2rLHUvSYnkh7oXtwazdjKHYQY1OBJVh2Q/exec";
+                
+                try {
+                    const response = await fetch(GAS_URL);
+                    
+                    // Item six: ensure the google apps script returns the correct cross origin resource sharing headers
+                    // (This is handled by the GAS backend returning Access-Control-Allow-Origin: *)
+                    
+                    // Item seven: convert the received response text into a javascript object notation array
+                    const dataText = await response.text();
+                    let dataArray = [];
+                    try {
+                        dataArray = JSON.parse(dataText);
+                    } catch (err) {
+                        console.error("Failed to parse JSON:", err);
+                        dataArray = [];
+                    }
+                    
+                    // Item eight: filter this array to extract only the objects where the first column matches your month and year string and the column J matches your section string and the column G matches your scrap type string
+                    const headerRow = dataArray.length > 0 ? dataArray[0] : null;
+                    const filteredData = dataArray.filter((item, index) => {
+                        if (index === 0) return false; // Skip header for filtering
+                        const colA = Array.isArray(item) ? item[0] : (item['Column A'] || item['Date'] || Object.values(item)[0]);
+                        const colG = Array.isArray(item) ? item[6] : (item['Column G'] || item['Scrap Type'] || Object.values(item)[6]);
+                        const colJ = Array.isArray(item) ? item[9] : (item['Column J'] || item['Section'] || Object.values(item)[9]);
+                        
+                        const matchDate = String(colA).includes(searchString);
+                        const matchSection = section === "TOTAL" ? true : String(colJ).toUpperCase() === section.toUpperCase();
+                        const matchScrapType = section === "TOTAL" ? true : String(colG).toUpperCase() === scrapType.toUpperCase();
+                        
+                        return matchDate && matchSection && matchScrapType;
+                    });
+                    
+                    if (headerRow && filteredData.length > 0 && Array.isArray(filteredData[0])) {
+                        filteredData.unshift(headerRow);
+                    }
+                    
+                    // Item nine: open a new browser tab to display the detailed data
+                    const newTab = window.open('', '_blank');
+                    if (!newTab) {
+                        alert("Please allow popups to view details.");
+                        return;
+                    }
+                    
+                    newTab.document.write(`
+                        <!DOCTYPE html>
+                        <html>
+                        <head>
+                            <title>Details for ${firstCellText} - ${monthText}</title>
+                            <style>
+                                body { font-family: 'Inter', sans-serif; padding: 20px; background-color: #f9fafb; color: #111827; }
+                                h3 { margin-top: 0; margin-bottom: 20px; font-size: 20px; font-weight: 600; }
+                                .container { background-color: white; padding: 24px; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); max-width: 1200px; margin: 0 auto; overflow-x: auto; }
+                                .row { border-bottom: 1px solid #e5e7eb; padding: 12px 0; font-size: 14px; word-break: break-all; }
+                                .row:last-child { border-bottom: none; }
+                                .no-data { padding: 20px; color: #6b7280; text-align: center; background: #f3f4f6; border-radius: 6px; }
+                                table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+                                th, td { border: 1px solid #e5e7eb; padding: 8px 12px; text-align: left; font-size: 14px; }
+                                th { background-color: #f9fafb; font-weight: 600; }
+                            </style>
+                        </head>
+                        <body>
+                            <div class="container">
+                                <h3>Details for ${firstCellText} - ${monthText}</h3>
+                                <div id="content"></div>
+                            </div>
+                        </body>
+                        </html>
+                    `);
+                    
+                    const contentDiv = newTab.document.getElementById('content');
+                    
+                    // Item ten: loop through the filtered data array generating new elements for each row of detailed information and append these to the new tab
+                    if (filteredData.length === 0) {
+                        const noDataDiv = newTab.document.createElement('div');
+                        noDataDiv.className = 'no-data';
+                        noDataDiv.textContent = 'No detailed data found.';
+                        contentDiv.appendChild(noDataDiv);
+                    } else {
+                        const isObject = typeof filteredData[0] === 'object' && filteredData[0] !== null;
+                        
+                        if (isObject && !Array.isArray(filteredData[0])) {
+                            const table = newTab.document.createElement('table');
+                            const thead = newTab.document.createElement('thead');
+                            const tbody = newTab.document.createElement('tbody');
+                            
+                            const headers = Object.keys(filteredData[0]);
+                            const headerRow = newTab.document.createElement('tr');
+                            headers.forEach(header => {
+                                const th = newTab.document.createElement('th');
+                                th.textContent = header;
+                                headerRow.appendChild(th);
+                            });
+                            thead.appendChild(headerRow);
+                            
+                            filteredData.forEach(rowData => {
+                                const tr = newTab.document.createElement('tr');
+                                headers.forEach(header => {
+                                    const td = newTab.document.createElement('td');
+                                    td.textContent = rowData[header] !== undefined && rowData[header] !== null ? String(rowData[header]) : '';
+                                    tr.appendChild(td);
+                                });
+                                tbody.appendChild(tr);
+                            });
+                            
+                            table.appendChild(thead);
+                            table.appendChild(tbody);
+                            contentDiv.appendChild(table);
+                        } else if (isObject && Array.isArray(filteredData[0])) {
+                             const table = newTab.document.createElement('table');
+                             const thead = newTab.document.createElement('thead');
+                             const tbody = newTab.document.createElement('tbody');
+                             filteredData.forEach((rowData, rowIndex) => {
+                                const tr = newTab.document.createElement('tr');
+                                rowData.forEach(cell => {
+                                    const cellElement = rowIndex === 0 ? newTab.document.createElement('th') : newTab.document.createElement('td');
+                                    cellElement.textContent = cell !== undefined && cell !== null ? String(cell) : '';
+                                    tr.appendChild(cellElement);
+                                });
+                                if (rowIndex === 0) {
+                                    thead.appendChild(tr);
+                                } else {
+                                    tbody.appendChild(tr);
+                                }
+                            });
+                            table.appendChild(thead);
+                            table.appendChild(tbody);
+                            contentDiv.appendChild(table);
+                        } else {
+                            filteredData.forEach(rowData => {
+                                const rowDiv = newTab.document.createElement('div');
+                                rowDiv.className = 'row';
+                                rowDiv.textContent = JSON.stringify(rowData);
+                                contentDiv.appendChild(rowDiv);
+                            });
+                        }
+                    }
+                    newTab.document.close();
+                    
+                } catch (error) {
+                    console.error("Error fetching detail data:", error);
+                    alert("Failed to fetch detail data. Please check the console for errors.");
+                }
+            };
+
             const months = data.map((d) => getMonthName(d.month, lang));
 
             const rows = [
@@ -1288,7 +1462,10 @@
                                                         isHighlighted ? "bg-[#00BFFF]/20 text-blue-900 font-semibold" : "text-gray-700",
                                                         isRed ? "!bg-red-500 !text-white" : ""
                                                     )}
-                                                    onClick={() => handleCellClick(pointId)}
+                                                    onClick={(e) => {
+                                                        handleCellClick(pointId);
+                                                        fetchAndShowDetails(e);
+                                                    }}
                                                 >
                                                     {row.formatter(cellValue)}
                                                 </td>
