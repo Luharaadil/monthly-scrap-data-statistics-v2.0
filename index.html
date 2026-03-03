@@ -717,42 +717,84 @@
                 });
             };
 
-            const fetchAndShowDetails = async (e) => {
-                // Item one: identify the table body cells containing the numerical scrap data and attach a javascript click event listener to them
-                const cell = e.currentTarget;
-                
-                // Item two: upon a click event retrieve the month value from the table header cell corresponding to the clicked column index
-                const colIndex = cell.cellIndex;
-                const table = cell.closest('table');
-                const headerCell = table.rows[0].cells[colIndex];
-                const monthText = headerCell.textContent.trim();
-                
-                // Item three: retrieve the text content from the first cell of the clicked row to identify the year the section and the scrap type
-                const row = cell.closest('tr');
-                const firstCellText = row.cells[0].textContent.trim();
-                
+            const fetchAndShowDetails = async (labelEn, monthNum) => {
                 let year = "";
                 let section = "";
                 let scrapType = "";
                 
-                const parts = firstCellText.split(/[_ ]/);
-                if (parts.length >= 1) year = parts[0];
-                if (parts.length >= 2) section = parts[1];
-                if (parts.length >= 3) scrapType = parts.slice(2).join(" ");
+                // The labelEn format is typically "YYYY_SECTION SCRAP_TYPE"
+                // e.g., "2024_MX RUBBER" or "2024_EX RUBBER"
+                const parts = labelEn.split('_');
+                if (parts.length >= 1) {
+                    year = parts[0];
+                }
+                if (parts.length >= 2) {
+                    const sectionAndType = parts[1].split(' ');
+                    if (sectionAndType.length >= 1) section = sectionAndType[0];
+                    if (sectionAndType.length >= 2) scrapType = sectionAndType.slice(1).join(' ');
+                }
                 
-                // Item four: construct a search string combining the extracted month and year to match the exact text format found in the first column of your google sheet data
-                // Since colIndex 0 is the row label, colIndex 1 corresponds to month 1, colIndex 2 to month 2, etc.
-                const monthNum = String(colIndex).padStart(2, '0');
-                const searchString = `${year}-${monthNum}`;
+                // Handle special cases like "2024_TOTAL"
+                if (section === "TOTAL") {
+                    if (category === 'RUBBER ALL') scrapType = 'RUBBER';
+                    else if (category === 'PLY ALL') scrapType = 'PLY';
+                    else if (category === 'BW ALL') scrapType = 'BW';
+                    else if (category === 'CH ALL') scrapType = 'CHAFER';
+                    else if (category === 'PLY/CH ALL') scrapType = 'PLY/CH';
+                    else scrapType = "TOTAL";
+                }
                 
-                // Item five: utilize the javascript fetch api to request the detail data from your google apps script web app endpoint
+                // Map dashboard labels to Google Sheet values
+                const sectionMap = {
+                    "BD": "TB",
+                    "CURING": "CR",
+                    "RSIP": "RISP"
+                };
+                const mappedSection = sectionMap[section] || section;
+
+                const scrapTypeMap = {
+                    "CH": "CHAFER",
+                    "CHM": "CHEMICAL",
+                    "CB": "CARBON BLACK" // Assuming CB is Carbon Black, adjust if needed
+                };
+                const mappedScrapType = scrapTypeMap[scrapType] || scrapType;
+                
+                const monthStr = String(monthNum).padStart(2, '0');
+                const searchString = `${year}-${monthStr}`;
+                
+                // Open a new browser tab immediately to show loading state
+                const newTab = window.open('', '_blank');
+                if (!newTab) {
+                    alert("Please allow popups to view details.");
+                    return;
+                }
+                
+                newTab.document.write(`
+                    <!DOCTYPE html>
+                    <html>
+                    <head>
+                        <title>Loading Details...</title>
+                        <style>
+                            body { font-family: 'Inter', sans-serif; padding: 20px; background-color: #f9fafb; color: #111827; }
+                            .loading { display: flex; justify-content: center; align-items: center; height: 200px; font-size: 18px; color: #6b7280; }
+                            .spinner { border: 4px solid rgba(0, 0, 0, 0.1); width: 36px; height: 36px; border-radius: 50%; border-left-color: #3b82f6; animation: spin 1s linear infinite; margin-right: 12px; }
+                            @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+                        </style>
+                    </head>
+                    <body>
+                        <div class="loading">
+                            <div class="spinner"></div>
+                            Loading detailed data for ${labelEn} (Month: ${monthStr})...
+                        </div>
+                    </body>
+                    </html>
+                `);
+                newTab.document.close();
+
                 const GAS_URL = "https://script.google.com/macros/s/AKfycbwPfPWC8sPVCM0whUDlYfhKraQuROo_pvUhZ2rLHUvSYnkh7oXtwazdjKHYQY1OBJVh2Q/exec";
                 
                 try {
                     const response = await fetch(GAS_URL);
-                    
-                    // Item six: ensure the google apps script returns the correct cross origin resource sharing headers
-                    // (This is handled by the GAS backend returning Access-Control-Allow-Origin: *)
                     
                     // Item seven: convert the received response text into a javascript object notation array
                     const dataText = await response.text();
@@ -768,13 +810,48 @@
                     const headerRow = dataArray.length > 0 ? dataArray[0] : null;
                     const filteredData = dataArray.filter((item, index) => {
                         if (index === 0) return false; // Skip header for filtering
-                        const colA = Array.isArray(item) ? item[0] : (item['Column A'] || item['Date'] || Object.values(item)[0]);
-                        const colG = Array.isArray(item) ? item[6] : (item['Column G'] || item['Scrap Type'] || Object.values(item)[6]);
-                        const colJ = Array.isArray(item) ? item[9] : (item['Column J'] || item['Section'] || Object.values(item)[9]);
                         
-                        const matchDate = String(colA).includes(searchString);
-                        const matchSection = section === "TOTAL" ? true : String(colJ).toUpperCase() === section.toUpperCase();
-                        const matchScrapType = section === "TOTAL" ? true : String(colG).toUpperCase() === scrapType.toUpperCase();
+                        // Based on the Google Sheet data structure:
+                        // col 0: Date
+                        // col 6: TYPE (Scrap Type)
+                        // col 9: easy (Section - MX, EX, CR, etc.)
+                        const colA = Array.isArray(item) ? item[0] : (item['Column A'] || item['Date'] || Object.values(item)[0]);
+                        const colG = Array.isArray(item) ? item[6] : (item['Column G'] || item['TYPE'] || Object.values(item)[6]);
+                        const colJ = Array.isArray(item) ? item[9] : (item['Column J'] || item['easy'] || Object.values(item)[9]);
+                        
+                        let matchDate = false;
+                        if (colA) {
+                            const colAStr = String(colA);
+                            if (colAStr.startsWith(searchString)) {
+                                matchDate = true;
+                            } else {
+                                const dateObj = new Date(colA);
+                                if (!isNaN(dateObj.getTime())) {
+                                    // Use UTC year and month directly, as the dates like "2025-01-31T18:30:00.000Z"
+                                    // correctly represent the month in UTC.
+                                    const itemYear = dateObj.getUTCFullYear();
+                                    const itemMonth = dateObj.getUTCMonth() + 1;
+                                    matchDate = (String(itemYear) === String(year)) && (Number(itemMonth) === Number(monthNum));
+                                } else {
+                                    matchDate = colAStr.includes(searchString);
+                                }
+                            }
+                        }
+                        
+                        const matchSection = section === "TOTAL" ? true : String(colJ).trim().toUpperCase() === mappedSection.toUpperCase();
+                        
+                        let matchScrapType = false;
+                        if (section === "TOTAL") {
+                            if (scrapType === "TOTAL") {
+                                matchScrapType = true;
+                            } else if (scrapType === "PLY/CH") {
+                                matchScrapType = String(colG).trim().toUpperCase() === "PLY" || String(colG).trim().toUpperCase() === "CHAFER";
+                            } else {
+                                matchScrapType = String(colG).trim().toUpperCase() === scrapType.toUpperCase();
+                            }
+                        } else {
+                            matchScrapType = String(colG).trim().toUpperCase() === mappedScrapType.toUpperCase();
+                        }
                         
                         return matchDate && matchSection && matchScrapType;
                     });
@@ -783,18 +860,13 @@
                         filteredData.unshift(headerRow);
                     }
                     
-                    // Item nine: open a new browser tab to display the detailed data
-                    const newTab = window.open('', '_blank');
-                    if (!newTab) {
-                        alert("Please allow popups to view details.");
-                        return;
-                    }
-                    
+                    // Item nine: update the new browser tab to display the detailed data
+                    newTab.document.open();
                     newTab.document.write(`
                         <!DOCTYPE html>
                         <html>
                         <head>
-                            <title>Details for ${firstCellText} - ${monthText}</title>
+                            <title>Details for ${labelEn} - Month ${monthStr}</title>
                             <style>
                                 body { font-family: 'Inter', sans-serif; padding: 20px; background-color: #f9fafb; color: #111827; }
                                 h3 { margin-top: 0; margin-bottom: 20px; font-size: 20px; font-weight: 600; }
@@ -809,7 +881,7 @@
                         </head>
                         <body>
                             <div class="container">
-                                <h3>Details for ${firstCellText} - ${monthText}</h3>
+                                <h3>Details for ${labelEn} - Month ${monthStr}</h3>
                                 <div id="content"></div>
                             </div>
                         </body>
@@ -887,7 +959,11 @@
                     
                 } catch (error) {
                     console.error("Error fetching detail data:", error);
-                    alert("Failed to fetch detail data. Please check the console for errors.");
+                    if (newTab) {
+                        newTab.document.open();
+                        newTab.document.write(`<div style="padding: 20px; color: red; font-family: sans-serif;">Failed to fetch detail data. Please check the console for errors.</div>`);
+                        newTab.document.close();
+                    }
                 }
             };
 
@@ -1464,7 +1540,7 @@
                                                     )}
                                                     onClick={(e) => {
                                                         handleCellClick(pointId);
-                                                        fetchAndShowDetails(e);
+                                                        fetchAndShowDetails(row.labelEn, d.month);
                                                     }}
                                                 >
                                                     {row.formatter(cellValue)}
