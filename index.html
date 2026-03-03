@@ -877,7 +877,10 @@
                                 .no-data { padding: 20px; color: #6b7280; text-align: center; background: #f3f4f6; border-radius: 6px; }
                                 table { width: 100%; border-collapse: collapse; margin-top: 10px; }
                                 th, td { border: 1px solid #e5e7eb; padding: 8px 12px; text-align: left; font-size: 14px; }
-                                th { background-color: #f9fafb; font-weight: 600; }
+                                th { background-color: #f9fafb; font-weight: 600; vertical-align: bottom; }
+                                .filter-input { width: 100%; box-sizing: border-box; margin-top: 8px; padding: 4px; font-size: 12px; border: 1px solid #d1d5db; border-radius: 4px; font-weight: normal; }
+                                .total-row { font-weight: bold; background-color: #f3f4f6; }
+                                .total-row td { border-top: 2px solid #d1d5db; }
                             </style>
                         </head>
                         <body>
@@ -885,6 +888,61 @@
                                 <h3>Details for ${labelEn} - Month ${monthStr}</h3>
                                 <div id="content"></div>
                             </div>
+                            <script>
+                                function filterTable() {
+                                    const table = document.querySelector('table');
+                                    if (!table) return;
+                                    const tbody = table.querySelector('tbody');
+                                    const rows = tbody.querySelectorAll('tr:not(.total-row)');
+                                    const inputs = table.querySelectorAll('.filter-input');
+                                    
+                                    let totals = new Array(inputs.length).fill(0);
+                                    let hasNumericColumn = new Array(inputs.length).fill(false);
+                                    
+                                    rows.forEach(row => {
+                                        let showRow = true;
+                                        const cells = row.querySelectorAll('td');
+                                        
+                                        inputs.forEach((input, index) => {
+                                            const filterValue = input.value.toLowerCase();
+                                            if (filterValue && cells[index]) {
+                                                const cellText = cells[index].textContent.toLowerCase();
+                                                if (!cellText.includes(filterValue)) {
+                                                    showRow = false;
+                                                }
+                                            }
+                                        });
+                                        
+                                        if (showRow) {
+                                            row.style.display = '';
+                                            cells.forEach((cell, index) => {
+                                                const text = cell.textContent.trim();
+                                                if (text !== '' && !isNaN(Number(text))) {
+                                                    totals[index] += Number(text);
+                                                    hasNumericColumn[index] = true;
+                                                }
+                                            });
+                                        } else {
+                                            row.style.display = 'none';
+                                        }
+                                    });
+                                    
+                                    const totalRow = tbody.querySelector('.total-row');
+                                    if (totalRow) {
+                                        const totalCells = totalRow.querySelectorAll('td');
+                                        totalCells.forEach((cell, index) => {
+                                            if (index === 0) {
+                                                cell.textContent = 'Total';
+                                            } else if (hasNumericColumn[index]) {
+                                                cell.textContent = Number.isInteger(totals[index]) ? totals[index] : totals[index].toFixed(2);
+                                            } else {
+                                                cell.textContent = '';
+                                            }
+                                        });
+                                    }
+                                }
+                                setTimeout(filterTable, 100);
+                            <\/script>
                         </body>
                         </html>
                     `);
@@ -907,9 +965,9 @@
                             
                             const headers = Object.keys(filteredData[0]);
                             const headerRow = newTab.document.createElement('tr');
-                            headers.forEach(header => {
+                            headers.forEach((header, index) => {
                                 const th = newTab.document.createElement('th');
-                                th.textContent = header;
+                                th.innerHTML = `<div>${header}</div><input type="text" class="filter-input" data-col="${index}" placeholder="Filter..." onkeyup="filterTable()">`;
                                 headerRow.appendChild(th);
                             });
                             thead.appendChild(headerRow);
@@ -938,6 +996,14 @@
                                 tbody.appendChild(tr);
                             });
                             
+                            const totalRow = newTab.document.createElement('tr');
+                            totalRow.className = 'total-row';
+                            for (let i = 0; i < headers.length; i++) {
+                                const td = newTab.document.createElement('td');
+                                totalRow.appendChild(td);
+                            }
+                            tbody.appendChild(totalRow);
+                            
                             table.appendChild(thead);
                             table.appendChild(tbody);
                             contentDiv.appendChild(table);
@@ -964,7 +1030,11 @@
                                         }
                                     }
                                     
-                                    cellElement.textContent = cellText;
+                                    if (rowIndex === 0) {
+                                        cellElement.innerHTML = `<div>${cellText}</div><input type="text" class="filter-input" data-col="${cellIndex}" placeholder="Filter..." onkeyup="filterTable()">`;
+                                    } else {
+                                        cellElement.textContent = cellText;
+                                    }
                                     tr.appendChild(cellElement);
                                 });
                                 if (rowIndex === 0) {
@@ -973,6 +1043,16 @@
                                     tbody.appendChild(tr);
                                 }
                             });
+                            
+                            const totalRow = newTab.document.createElement('tr');
+                            totalRow.className = 'total-row';
+                            const numCols = filteredData[0].length;
+                            for (let i = 0; i < numCols; i++) {
+                                const td = newTab.document.createElement('td');
+                                totalRow.appendChild(td);
+                            }
+                            tbody.appendChild(totalRow);
+                            
                             table.appendChild(thead);
                             table.appendChild(tbody);
                             contentDiv.appendChild(table);
