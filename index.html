@@ -822,19 +822,20 @@
                         let matchDate = false;
                         if (colA) {
                             const colAStr = String(colA);
-                            if (colAStr.startsWith(searchString)) {
-                                matchDate = true;
+                            const dateObj = new Date(colA);
+                            
+                            if (!isNaN(dateObj.getTime())) {
+                                // Add 12 hours to handle timezone offsets (e.g., IST midnight is previous day 18:30 UTC)
+                                // This safely pushes the date into the correct month regardless of local timezone
+                                dateObj.setUTCHours(dateObj.getUTCHours() + 12);
+                                const itemYear = dateObj.getUTCFullYear();
+                                const itemMonth = dateObj.getUTCMonth() + 1;
+                                matchDate = (String(itemYear) === String(year)) && (Number(itemMonth) === Number(monthNum));
                             } else {
-                                const dateObj = new Date(colA);
-                                if (!isNaN(dateObj.getTime())) {
-                                    // Use UTC year and month directly, as the dates like "2025-01-31T18:30:00.000Z"
-                                    // correctly represent the month in UTC.
-                                    const itemYear = dateObj.getUTCFullYear();
-                                    const itemMonth = dateObj.getUTCMonth() + 1;
-                                    matchDate = (String(itemYear) === String(year)) && (Number(itemMonth) === Number(monthNum));
-                                } else {
-                                    matchDate = colAStr.includes(searchString);
-                                }
+                                // Fallback for non-standard date strings
+                                matchDate = colAStr.includes(searchString) || 
+                                            colAStr.includes(`${monthNum}-${year}`) || 
+                                            colAStr.includes(`${monthNum}/${year}`);
                             }
                         }
                         
@@ -915,9 +916,23 @@
                             
                             filteredData.forEach(rowData => {
                                 const tr = newTab.document.createElement('tr');
-                                headers.forEach(header => {
+                                headers.forEach((header, cellIndex) => {
                                     const td = newTab.document.createElement('td');
-                                    td.textContent = rowData[header] !== undefined && rowData[header] !== null ? String(rowData[header]) : '';
+                                    let cellText = rowData[header] !== undefined && rowData[header] !== null ? String(rowData[header]) : '';
+                                    
+                                    // Format the first column (Date) to MM-YYYY
+                                    if (cellIndex === 0 && cellText) {
+                                        const dateObj = new Date(cellText);
+                                        if (!isNaN(dateObj.getTime())) {
+                                            // Add 12 hours to handle timezone offsets as done in filtering
+                                            dateObj.setUTCHours(dateObj.getUTCHours() + 12);
+                                            const yy = dateObj.getUTCFullYear();
+                                            const mm = String(dateObj.getUTCMonth() + 1).padStart(2, '0');
+                                            cellText = `${mm}-${yy}`;
+                                        }
+                                    }
+                                    
+                                    td.textContent = cellText;
                                     tr.appendChild(td);
                                 });
                                 tbody.appendChild(tr);
@@ -932,9 +947,24 @@
                              const tbody = newTab.document.createElement('tbody');
                              filteredData.forEach((rowData, rowIndex) => {
                                 const tr = newTab.document.createElement('tr');
-                                rowData.forEach(cell => {
+                                rowData.forEach((cell, cellIndex) => {
                                     const cellElement = rowIndex === 0 ? newTab.document.createElement('th') : newTab.document.createElement('td');
-                                    cellElement.textContent = cell !== undefined && cell !== null ? String(cell) : '';
+                                    
+                                    let cellText = cell !== undefined && cell !== null ? String(cell) : '';
+                                    
+                                    // Format the first column (Date) to MM-YYYY
+                                    if (rowIndex > 0 && cellIndex === 0 && cellText) {
+                                        const dateObj = new Date(cellText);
+                                        if (!isNaN(dateObj.getTime())) {
+                                            // Add 12 hours to handle timezone offsets as done in filtering
+                                            dateObj.setUTCHours(dateObj.getUTCHours() + 12);
+                                            const yy = dateObj.getUTCFullYear();
+                                            const mm = String(dateObj.getUTCMonth() + 1).padStart(2, '0');
+                                            cellText = `${mm}-${yy}`;
+                                        }
+                                    }
+                                    
+                                    cellElement.textContent = cellText;
                                     tr.appendChild(cellElement);
                                 });
                                 if (rowIndex === 0) {
