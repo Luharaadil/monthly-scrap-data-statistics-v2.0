@@ -329,7 +329,7 @@
                                 scrap = parseFloat(row[11]) || null;
                                 prodWeight = parseFloat(row[12]) || null;
                             } else if (category === 'CL_CH') {
-                                scrap = parseFloat(row[12]) || null;
+                                scrap = parseFloat(row[13]) || null;
                                 prodWeight = parseFloat(row[14]) || null;
                             } else if (category === 'CT_CH') {
                                 scrap = parseFloat(row[15]) || null;
@@ -368,7 +368,7 @@
                                 const mxScrap = parseFloat(row[1]) || null;
                                 const exScrap = parseFloat(row[5]) || null;
                                 const clScrap = parseFloat(row[11]) || null;
-                                const ctScrap = parseFloat(row[13]) || null;
+                                const ctScrap = parseFloat(row[17]) || null;
                                 const curingScrap = parseFloat(row[31]) || null;
                                 const rispScrap = parseFloat(row[33]) || null;
                                 
@@ -398,13 +398,14 @@
                                 }
                                 prodWeight = parseFloat(row[22]) || null;
                             } else if (category === 'CH ALL') {
+                                const clChScrap = parseFloat(row[13]) || null;
                                 const ctChScrap = parseFloat(row[15]) || null;
                                 const bdChScrap = parseFloat(row[27]) || null;
                                 const rsipChScrap = parseFloat(row[37]) || null;
                                 
-                                const hasAnyScrap = ctChScrap !== null || bdChScrap !== null || rsipChScrap !== null;
+                                const hasAnyScrap = clChScrap !== null || ctChScrap !== null || bdChScrap !== null || rsipChScrap !== null;
                                 if (hasAnyScrap) {
-                                scrap = (ctChScrap || 0) + (bdChScrap || 0) + (rsipChScrap || 0);
+                                scrap = (clChScrap || 0) + (ctChScrap || 0) + (bdChScrap || 0) + (rsipChScrap || 0);
                                 }
                                 prodWeight = parseFloat(row[16]) || null;
                             } else if (category === 'PLY/CH ALL') {
@@ -413,14 +414,15 @@
                                 const bdPlyScrap = parseFloat(row[25]) || null;
                                 const rispPlyScrap = parseFloat(row[35]) || null;
                                 
+                                const clChScrap = parseFloat(row[13]) || null;
                                 const ctChScrap = parseFloat(row[15]) || null;
                                 const bdChScrap = parseFloat(row[27]) || null;
                                 const rsipChScrap = parseFloat(row[37]) || null;
                                 
-                                const hasAnyScrap = clPlyScrap !== null || ctPlyScrap !== null || bdPlyScrap !== null || rispPlyScrap !== null || ctChScrap !== null || bdChScrap !== null || rsipChScrap !== null;
+                                const hasAnyScrap = clPlyScrap !== null || ctPlyScrap !== null || bdPlyScrap !== null || rispPlyScrap !== null || clChScrap !== null || ctChScrap !== null || bdChScrap !== null || rsipChScrap !== null;
                                 
                                 if (hasAnyScrap) {
-                                    scrap = (clPlyScrap || 0) + (ctPlyScrap || 0) + (bdPlyScrap || 0) + (rispPlyScrap || 0) + (ctChScrap || 0) + (bdChScrap || 0) + (rsipChScrap || 0);
+                                    scrap = (clPlyScrap || 0) + (ctPlyScrap || 0) + (bdPlyScrap || 0) + (rispPlyScrap || 0) + (clChScrap || 0) + (ctChScrap || 0) + (bdChScrap || 0) + (rsipChScrap || 0);
                                 }
                                 
                                 const plyProd = parseFloat(row[8]) || 0;
@@ -441,22 +443,22 @@
                                 clPlyRubber: category === 'CL_PLY' ? scrap : (category === 'PLY ALL' ? (parseFloat(row[7]) || null) : null),
                                 clFabricRubber: category === 'CL_FABRIC' ? scrap : null,
                                 clRbRubber: category === 'CL_RB' ? scrap : null,
-                                clChRubber: category === 'CL_CH' ? scrap : null,
-                                ctChRubber: category === 'CT_CH' ? scrap : (category === 'CH ALL' ? (parseFloat(row[15]) || null) : null),
+                                clChRubber: category === 'CL_CH' ? scrap : (['CH ALL', 'PLY/CH ALL'].includes(category) ? (parseFloat(row[13]) || null) : null),
+                                ctChRubber: category === 'CT_CH' ? scrap : (['CH ALL', 'PLY/CH ALL'].includes(category) ? (parseFloat(row[15]) || null) : null),
                                 ctRbRubber: category === 'CT_RB' ? scrap : null,
-                                ctPlyRubber: category === 'CT_PLY' ? scrap : (category === 'PLY ALL' ? (parseFloat(row[19]) || null) : null),
+                                ctPlyRubber: category === 'CT_PLY' ? scrap : (['PLY ALL', 'PLY/CH ALL'].includes(category) ? (parseFloat(row[19]) || null) : null),
                                 ctBwRubber: category === 'CT_BW' ? scrap : (category === 'BW ALL' ? (parseFloat(row[21]) || null) : null),
                                 bdRbRubber: category === 'BD_RB' ? scrap : null,
-                                bdPlyRubber: category === 'BD_PLY' ? scrap : (category === 'PLY ALL' ? (parseFloat(row[25]) || null) : null),
-                                bdChRubber: category === 'BD_CH' ? scrap : (category === 'CH ALL' ? (parseFloat(row[27]) || null) : null),
+                                bdPlyRubber: category === 'BD_PLY' ? scrap : (['PLY ALL', 'PLY/CH ALL'].includes(category) ? (parseFloat(row[25]) || null) : null),
+                                bdChRubber: category === 'BD_CH' ? scrap : (['CH ALL', 'PLY/CH ALL'].includes(category) ? (parseFloat(row[27]) || null) : null),
                                 bdBwRubber: category === 'BD_BW' ? scrap : (category === 'BW ALL' ? (parseFloat(row[29]) || null) : null),
-                                ctRubber: category === 'RUBBER ALL' ? (parseFloat(row[13]) || null) : null,
+                                ctRubber: category === 'RUBBER ALL' ? (parseFloat(row[17]) || null) : null,
                                 clRubber: category === 'RUBBER ALL' ? (parseFloat(row[11]) || null) : null,
                                 curingRubber: category === 'RUBBER ALL' ? (parseFloat(row[31]) || null) : null,
                                 rispRubber: category === 'RUBBER ALL' ? (parseFloat(row[33]) || null) : (category === 'RSIP_RB' ? scrap : null),
                                 exPlyRubber: null,
-                                rispPlyRubber: category === 'PLY ALL' ? (parseFloat(row[35]) || null) : (category === 'RSIP_PLY' ? scrap : null),
-                                rispChRubber: category === 'RSIP_CH' ? scrap : (category === 'CH ALL' ? (parseFloat(row[37]) || null) : null),
+                                rispPlyRubber: ['PLY ALL', 'PLY/CH ALL'].includes(category) ? (parseFloat(row[35]) || null) : (category === 'RSIP_PLY' ? scrap : null),
+                                rispChRubber: category === 'RSIP_CH' ? scrap : (['CH ALL', 'PLY/CH ALL'].includes(category) ? (parseFloat(row[37]) || null) : null),
                                 rsipBwRubber: null,
                                 totalScrapWeight: scrap,
                                 totalScrapRatio: (scrap !== null && prodWeight !== null && prodWeight > 0) 
@@ -1407,11 +1409,25 @@
                         year: primaryYear,
                     },
                     {
+                        labelEn: `${compareYear}_MX RUBBER`,
+                        labelZh: `${compareYear} 混練膠料報廢`,
+                        getValue: (d) => d.data[compareYear]?.mxRubber,
+                        formatter: formatNumber,
+                        year: compareYear,
+                    },
+                    {
                         labelEn: `${primaryYear}_EX RUBBER`,
                         labelZh: `${primaryYear} 押出膠料報廢`,
                         getValue: (d) => d.data[primaryYear]?.exRubber,
                         formatter: formatNumber,
                         year: primaryYear,
+                    },
+                    {
+                        labelEn: `${compareYear}_EX RUBBER`,
+                        labelZh: `${compareYear} 押出膠料報廢`,
+                        getValue: (d) => d.data[compareYear]?.exRubber,
+                        formatter: formatNumber,
+                        year: compareYear,
                     },
                     {
                         labelEn: `${primaryYear}_CL RUBBER`,
@@ -1421,11 +1437,25 @@
                         year: primaryYear,
                     },
                     {
+                        labelEn: `${compareYear}_CL RUBBER`,
+                        labelZh: `${compareYear} 上膠膠料報廢`,
+                        getValue: (d) => d.data[compareYear]?.clRubber,
+                        formatter: formatNumber,
+                        year: compareYear,
+                    },
+                    {
                         labelEn: `${primaryYear}_CT RUBBER`,
                         labelZh: `${primaryYear} 裁斷膠料報廢`,
                         getValue: (d) => d.data[primaryYear]?.ctRubber,
                         formatter: formatNumber,
                         year: primaryYear,
+                    },
+                    {
+                        labelEn: `${compareYear}_CT RUBBER`,
+                        labelZh: `${compareYear} 裁斷膠料報廢`,
+                        getValue: (d) => d.data[compareYear]?.ctRubber,
+                        formatter: formatNumber,
+                        year: compareYear,
                     },
                     {
                         labelEn: `${primaryYear}_CURING RUBBER`,
@@ -1435,11 +1465,25 @@
                         year: primaryYear,
                     },
                     {
+                        labelEn: `${compareYear}_CURING RUBBER`,
+                        labelZh: `${compareYear} 加硫膠料報廢`,
+                        getValue: (d) => d.data[compareYear]?.curingRubber,
+                        formatter: formatNumber,
+                        year: compareYear,
+                    },
+                    {
                         labelEn: `${primaryYear}_RISP RUBBER`,
                         labelZh: `${primaryYear} 膠檢膠料報廢`,
                         getValue: (d) => d.data[primaryYear]?.rispRubber,
                         formatter: formatNumber,
                         year: primaryYear,
+                    },
+                    {
+                        labelEn: `${compareYear}_RISP RUBBER`,
+                        labelZh: `${compareYear} 膠檢膠料報廢`,
+                        getValue: (d) => d.data[compareYear]?.rispRubber,
+                        formatter: formatNumber,
+                        year: compareYear,
                     }
                 ] : []),
                 ...(category === 'PLY ALL' ? [
@@ -1451,11 +1495,25 @@
                         year: primaryYear,
                     },
                     {
+                        labelEn: `${compareYear}_EX PLY`,
+                        labelZh: `${compareYear} 押出簾布報廢`,
+                        getValue: (d) => d.data[compareYear]?.exPlyRubber,
+                        formatter: formatNumber,
+                        year: compareYear,
+                    },
+                    {
                         labelEn: `${primaryYear}_CL PLY`,
                         labelZh: `${primaryYear} 上膠簾布報廢`,
                         getValue: (d) => d.data[primaryYear]?.clPlyRubber,
                         formatter: formatNumber,
                         year: primaryYear,
+                    },
+                    {
+                        labelEn: `${compareYear}_CL PLY`,
+                        labelZh: `${compareYear} 上膠簾布報廢`,
+                        getValue: (d) => d.data[compareYear]?.clPlyRubber,
+                        formatter: formatNumber,
+                        year: compareYear,
                     },
                     {
                         labelEn: `${primaryYear}_CT PLY`,
@@ -1465,6 +1523,13 @@
                         year: primaryYear,
                     },
                     {
+                        labelEn: `${compareYear}_CT PLY`,
+                        labelZh: `${compareYear} 裁斷簾布報廢`,
+                        getValue: (d) => d.data[compareYear]?.ctPlyRubber,
+                        formatter: formatNumber,
+                        year: compareYear,
+                    },
+                    {
                         labelEn: `${primaryYear}_BD PLY`,
                         labelZh: `${primaryYear} 成型簾布報廢`,
                         getValue: (d) => d.data[primaryYear]?.bdPlyRubber,
@@ -1472,11 +1537,25 @@
                         year: primaryYear,
                     },
                     {
+                        labelEn: `${compareYear}_BD PLY`,
+                        labelZh: `${compareYear} 成型簾布報廢`,
+                        getValue: (d) => d.data[compareYear]?.bdPlyRubber,
+                        formatter: formatNumber,
+                        year: compareYear,
+                    },
+                    {
                         labelEn: `${primaryYear}_RISP PLY`,
                         labelZh: `${primaryYear} 膠檢簾布報廢`,
                         getValue: (d) => d.data[primaryYear]?.rispPlyRubber,
                         formatter: formatNumber,
                         year: primaryYear,
+                    },
+                    {
+                        labelEn: `${compareYear}_RISP PLY`,
+                        labelZh: `${compareYear} 膠檢簾布報廢`,
+                        getValue: (d) => d.data[compareYear]?.rispPlyRubber,
+                        formatter: formatNumber,
+                        year: compareYear,
                     }
                 ] : []),
                 ...(category === 'BW ALL' ? [
@@ -1488,6 +1567,13 @@
                         year: primaryYear,
                     },
                     {
+                        labelEn: `${compareYear}_CT BW`,
+                        labelZh: `${compareYear} 裁斷鋼絲報廢`,
+                        getValue: (d) => d.data[compareYear]?.ctBwRubber,
+                        formatter: formatNumber,
+                        year: compareYear,
+                    },
+                    {
                         labelEn: `${primaryYear}_BD BW`,
                         labelZh: `${primaryYear} 成型鋼絲報廢`,
                         getValue: (d) => d.data[primaryYear]?.bdBwRubber,
@@ -1495,20 +1581,55 @@
                         year: primaryYear,
                     },
                     {
+                        labelEn: `${compareYear}_BD BW`,
+                        labelZh: `${compareYear} 成型鋼絲報廢`,
+                        getValue: (d) => d.data[compareYear]?.bdBwRubber,
+                        formatter: formatNumber,
+                        year: compareYear,
+                    },
+                    {
                         labelEn: `${primaryYear}_RSIP BW`,
                         labelZh: `${primaryYear} 膠檢鋼絲報廢`,
                         getValue: (d) => d.data[primaryYear]?.rsipBwRubber,
                         formatter: formatNumber,
                         year: primaryYear,
+                    },
+                    {
+                        labelEn: `${compareYear}_RSIP BW`,
+                        labelZh: `${compareYear} 膠檢鋼絲報廢`,
+                        getValue: (d) => d.data[compareYear]?.rsipBwRubber,
+                        formatter: formatNumber,
+                        year: compareYear,
                     }
                 ] : []),
                 ...(category === 'CH ALL' ? [
+                    {
+                        labelEn: `${primaryYear}_CL CH`,
+                        labelZh: `${primaryYear} 上膠防擦布報廢`,
+                        getValue: (d) => d.data[primaryYear]?.clChRubber,
+                        formatter: formatNumber,
+                        year: primaryYear,
+                    },
+                    {
+                        labelEn: `${compareYear}_CL CH`,
+                        labelZh: `${compareYear} 上膠防擦布報廢`,
+                        getValue: (d) => d.data[compareYear]?.clChRubber,
+                        formatter: formatNumber,
+                        year: compareYear,
+                    },
                     {
                         labelEn: `${primaryYear}_CT CH`,
                         labelZh: `${primaryYear} 裁斷防擦布報廢`,
                         getValue: (d) => d.data[primaryYear]?.ctChRubber,
                         formatter: formatNumber,
                         year: primaryYear,
+                    },
+                    {
+                        labelEn: `${compareYear}_CT CH`,
+                        labelZh: `${compareYear} 裁斷防擦布報廢`,
+                        getValue: (d) => d.data[compareYear]?.ctChRubber,
+                        formatter: formatNumber,
+                        year: compareYear,
                     },
                     {
                         labelEn: `${primaryYear}_BD CH`,
@@ -1518,14 +1639,156 @@
                         year: primaryYear,
                     },
                     {
+                        labelEn: `${compareYear}_BD CH`,
+                        labelZh: `${compareYear} 成型防擦布報廢`,
+                        getValue: (d) => d.data[compareYear]?.bdChRubber,
+                        formatter: formatNumber,
+                        year: compareYear,
+                    },
+                    {
                         labelEn: `${primaryYear}_RSIP CH`,
                         labelZh: `${primaryYear} 膠檢防擦布報廢`,
                         getValue: (d) => d.data[primaryYear]?.rispChRubber,
                         formatter: formatNumber,
                         year: primaryYear,
+                    },
+                    {
+                        labelEn: `${compareYear}_RSIP CH`,
+                        labelZh: `${compareYear} 膠檢防擦布報廢`,
+                        getValue: (d) => d.data[compareYear]?.rispChRubber,
+                        formatter: formatNumber,
+                        year: compareYear,
                     }
                 ] : []),
-                ...(!['MX_RB', 'EX_RB', 'MX_CB', 'MX_CHM', 'CL_PLY', 'CL_FABRIC', 'CL_RB', 'CL_CH', 'CT_CH', 'CT_RB', 'CT_PLY', 'CT_BW', 'BD_RB', 'BD_PLY', 'BD_CH', 'BD_BW', 'RUBBER ALL', 'PLY ALL', 'RSIP_RB', 'RSIP_PLY', 'RSIP_CH', 'BW ALL', 'CH ALL'].includes(category) ? [
+                ...(category === 'PLY/CH ALL' ? [
+                    {
+                        labelEn: `${primaryYear}_EX PLY`,
+                        labelZh: `${primaryYear} 押出簾布報廢`,
+                        getValue: (d) => d.data[primaryYear]?.exPlyRubber,
+                        formatter: formatNumber,
+                        year: primaryYear,
+                    },
+                    {
+                        labelEn: `${compareYear}_EX PLY`,
+                        labelZh: `${compareYear} 押出簾布報廢`,
+                        getValue: (d) => d.data[compareYear]?.exPlyRubber,
+                        formatter: formatNumber,
+                        year: compareYear,
+                    },
+                    {
+                        labelEn: `${primaryYear}_CL PLY`,
+                        labelZh: `${primaryYear} 上膠簾布報廢`,
+                        getValue: (d) => d.data[primaryYear]?.clPlyRubber,
+                        formatter: formatNumber,
+                        year: primaryYear,
+                    },
+                    {
+                        labelEn: `${compareYear}_CL PLY`,
+                        labelZh: `${compareYear} 上膠簾布報廢`,
+                        getValue: (d) => d.data[compareYear]?.clPlyRubber,
+                        formatter: formatNumber,
+                        year: compareYear,
+                    },
+                    {
+                        labelEn: `${primaryYear}_CT PLY`,
+                        labelZh: `${primaryYear} 裁斷簾布報廢`,
+                        getValue: (d) => d.data[primaryYear]?.ctPlyRubber,
+                        formatter: formatNumber,
+                        year: primaryYear,
+                    },
+                    {
+                        labelEn: `${compareYear}_CT PLY`,
+                        labelZh: `${compareYear} 裁斷簾布報廢`,
+                        getValue: (d) => d.data[compareYear]?.ctPlyRubber,
+                        formatter: formatNumber,
+                        year: compareYear,
+                    },
+                    {
+                        labelEn: `${primaryYear}_BD PLY`,
+                        labelZh: `${primaryYear} 成型簾布報廢`,
+                        getValue: (d) => d.data[primaryYear]?.bdPlyRubber,
+                        formatter: formatNumber,
+                        year: primaryYear,
+                    },
+                    {
+                        labelEn: `${compareYear}_BD PLY`,
+                        labelZh: `${compareYear} 成型簾布報廢`,
+                        getValue: (d) => d.data[compareYear]?.bdPlyRubber,
+                        formatter: formatNumber,
+                        year: compareYear,
+                    },
+                    {
+                        labelEn: `${primaryYear}_RISP PLY`,
+                        labelZh: `${primaryYear} 膠檢簾布報廢`,
+                        getValue: (d) => d.data[primaryYear]?.rispPlyRubber,
+                        formatter: formatNumber,
+                        year: primaryYear,
+                    },
+                    {
+                        labelEn: `${compareYear}_RISP PLY`,
+                        labelZh: `${compareYear} 膠檢簾布報廢`,
+                        getValue: (d) => d.data[compareYear]?.rispPlyRubber,
+                        formatter: formatNumber,
+                        year: compareYear,
+                    },
+                    {
+                        labelEn: `${primaryYear}_CL CH`,
+                        labelZh: `${primaryYear} 上膠防擦布報廢`,
+                        getValue: (d) => d.data[primaryYear]?.clChRubber,
+                        formatter: formatNumber,
+                        year: primaryYear,
+                    },
+                    {
+                        labelEn: `${compareYear}_CL CH`,
+                        labelZh: `${compareYear} 上膠防擦布報廢`,
+                        getValue: (d) => d.data[compareYear]?.clChRubber,
+                        formatter: formatNumber,
+                        year: compareYear,
+                    },
+                    {
+                        labelEn: `${primaryYear}_CT CH`,
+                        labelZh: `${primaryYear} 裁斷防擦布報廢`,
+                        getValue: (d) => d.data[primaryYear]?.ctChRubber,
+                        formatter: formatNumber,
+                        year: primaryYear,
+                    },
+                    {
+                        labelEn: `${compareYear}_CT CH`,
+                        labelZh: `${compareYear} 裁斷防擦布報廢`,
+                        getValue: (d) => d.data[compareYear]?.ctChRubber,
+                        formatter: formatNumber,
+                        year: compareYear,
+                    },
+                    {
+                        labelEn: `${primaryYear}_BD CH`,
+                        labelZh: `${primaryYear} 成型防擦布報廢`,
+                        getValue: (d) => d.data[primaryYear]?.bdChRubber,
+                        formatter: formatNumber,
+                        year: primaryYear,
+                    },
+                    {
+                        labelEn: `${compareYear}_BD CH`,
+                        labelZh: `${compareYear} 成型防擦布報廢`,
+                        getValue: (d) => d.data[compareYear]?.bdChRubber,
+                        formatter: formatNumber,
+                        year: compareYear,
+                    },
+                    {
+                        labelEn: `${primaryYear}_RSIP CH`,
+                        labelZh: `${primaryYear} 膠檢防擦布報廢`,
+                        getValue: (d) => d.data[primaryYear]?.rispChRubber,
+                        formatter: formatNumber,
+                        year: primaryYear,
+                    },
+                    {
+                        labelEn: `${compareYear}_RSIP CH`,
+                        labelZh: `${compareYear} 膠檢防擦布報廢`,
+                        getValue: (d) => d.data[compareYear]?.rispChRubber,
+                        formatter: formatNumber,
+                        year: compareYear,
+                    }
+                ] : []),
+                ...(!['MX_RB', 'EX_RB', 'MX_CB', 'MX_CHM', 'CL_PLY', 'CL_FABRIC', 'CL_RB', 'CL_CH', 'CT_CH', 'CT_RB', 'CT_PLY', 'CT_BW', 'BD_RB', 'BD_PLY', 'BD_CH', 'BD_BW', 'RUBBER ALL', 'PLY ALL', 'RSIP_RB', 'RSIP_PLY', 'RSIP_CH', 'BW ALL', 'CH ALL', 'PLY/CH ALL'].includes(category) ? [
                     {
                         labelEn: `${primaryYear}_MX RUBBER`,
                         labelZh: `${primaryYear} 混練膠料報廢`,
