@@ -798,10 +798,6 @@
                 try {
                     const response = await fetch(GAS_URL);
                     
-                    if (!response.ok) {
-                        throw new Error(`HTTP error! status: ${response.status}`);
-                    }
-                    
                     // Item seven: convert the received response text into a javascript object notation array
                     const dataText = await response.text();
                     let dataArray = [];
@@ -809,7 +805,7 @@
                         dataArray = JSON.parse(dataText);
                     } catch (err) {
                         console.error("Failed to parse JSON:", err);
-                        throw new Error("Failed to parse data from server.");
+                        dataArray = [];
                     }
                     
                     // Item eight: filter this array to extract only the objects where the first column matches your month and year string and the column J matches your section string and the column G matches your scrap type string
@@ -874,8 +870,6 @@
                         <html>
                         <head>
                             <title>Details for ${labelEn} - Month ${monthStr}</title>
-                            <script src="https://cdn.jsdelivr.net/npm/chart.js"><\/script>
-                            <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.0.0"><\/script>
                             <style>
                                 body { font-family: 'Inter', sans-serif; padding: 20px; background-color: #f9fafb; color: #111827; }
                                 h3 { margin-top: 0; margin-bottom: 20px; font-size: 20px; font-weight: 600; }
@@ -889,121 +883,14 @@
                                 .filter-input { width: 100%; box-sizing: border-box; margin-top: 8px; padding: 4px; font-size: 12px; border: 1px solid #d1d5db; border-radius: 4px; font-weight: normal; }
                                 .total-row { font-weight: bold; background-color: #f3f4f6; }
                                 .total-row td { border-top: 2px solid #d1d5db; }
-                                .chart-container { margin-top: 30px; margin-bottom: 10px; height: 400px; width: 100%; display: none; }
                             </style>
                         </head>
                         <body>
                             <div class="container">
                                 <h3>Details for ${labelEn} - Month ${monthStr}</h3>
                                 <div id="content"></div>
-                                <div class="chart-container" id="chartContainer">
-                                    <canvas id="reasonsChart"></canvas>
-                                </div>
                             </div>
                             <script>
-                                let reasonsChart = null;
-
-                                function updateChart(reasonColIdx, qtyColIdx, rows) {
-                                    if (reasonColIdx === -1 || qtyColIdx === -1) return;
-                                    
-                                    let reasonsData = {};
-                                    let totalQty = 0;
-                                    
-                                    rows.forEach(row => {
-                                        if (row.style.display !== 'none') {
-                                            const cells = row.querySelectorAll('td');
-                                            if (cells[reasonColIdx] && cells[qtyColIdx]) {
-                                                const reason = cells[reasonColIdx].textContent.trim() || 'Unknown';
-                                                const qtyText = cells[qtyColIdx].textContent.trim();
-                                                const qty = parseFloat(qtyText) || 0;
-                                                
-                                                reasonsData[reason] = (reasonsData[reason] || 0) + qty;
-                                                totalQty += qty;
-                                            }
-                                        }
-                                    });
-                                    
-                                    const chartContainer = document.getElementById('chartContainer');
-                                    if (totalQty === 0) {
-                                        chartContainer.style.display = 'none';
-                                        return;
-                                    }
-                                    
-                                    chartContainer.style.display = 'block';
-                                    
-                                    // Sort by quantity descending
-                                    const sortedReasons = Object.keys(reasonsData).sort((a, b) => reasonsData[b] - reasonsData[a]);
-                                    
-                                    const chartLabels = sortedReasons;
-                                    const chartValues = sortedReasons.map(label => {
-                                        return ((reasonsData[label] / totalQty) * 100).toFixed(2);
-                                    });
-                                    
-                                    const ctx = document.getElementById('reasonsChart').getContext('2d');
-                                    
-                                    if (reasonsChart) {
-                                        reasonsChart.data.labels = chartLabels;
-                                        reasonsChart.data.datasets[0].data = chartValues;
-                                        reasonsChart.update();
-                                    } else {
-                                        Chart.register(ChartDataLabels);
-                                        reasonsChart = new Chart(ctx, {
-                                            type: 'bar',
-                                            data: {
-                                                labels: chartLabels,
-                                                datasets: [{
-                                                    label: 'Percentage (%)',
-                                                    data: chartValues,
-                                                    backgroundColor: 'rgba(59, 130, 246, 0.6)',
-                                                    borderColor: 'rgba(59, 130, 246, 1)',
-                                                    borderWidth: 1
-                                                }]
-                                            },
-                                            options: {
-                                                responsive: true,
-                                                maintainAspectRatio: false,
-                                                plugins: {
-                                                    title: {
-                                                        display: true,
-                                                        text: 'Reasons for Scrapping (Percentage)',
-                                                        font: { size: 16 }
-                                                    },
-                                                    legend: {
-                                                        display: false
-                                                    },
-                                                    datalabels: {
-                                                        anchor: 'end',
-                                                        align: 'top',
-                                                        formatter: function(value) {
-                                                            return value + '%';
-                                                        },
-                                                        font: {
-                                                            weight: 'bold'
-                                                        }
-                                                    },
-                                                    tooltip: {
-                                                        callbacks: {
-                                                            label: function(context) {
-                                                                return context.parsed.y + '%';
-                                                            }
-                                                        }
-                                                    }
-                                                },
-                                                scales: {
-                                                    y: {
-                                                        beginAtZero: true,
-                                                        title: {
-                                                            display: true,
-                                                            text: 'Percentage (%)'
-                                                        },
-                                                        max: 100
-                                                    }
-                                                }
-                                            }
-                                        });
-                                    }
-                                }
-
                                 function filterTable() {
                                     const table = document.querySelector('table');
                                     if (!table) return;
@@ -1054,15 +941,6 @@
                                                 cell.textContent = '';
                                             }
                                         });
-                                    }
-                                    
-                                    // Update chart
-                                    const thead = table.querySelector('thead');
-                                    if (thead) {
-                                        const headers = Array.from(thead.querySelectorAll('th')).map(th => th.textContent.trim());
-                                        const reasonColIdx = headers.findIndex(h => h.includes('報廢原因') || h.includes('Reasons for scrapping'));
-                                        const qtyColIdx = headers.findIndex(h => h.includes('公斤數') || h.includes('Qty'));
-                                        updateChart(reasonColIdx, qtyColIdx, rows);
                                     }
                                 }
                                 setTimeout(filterTable, 100);
@@ -1195,13 +1073,7 @@
                     console.error("Error fetching detail data:", error);
                     if (newTab) {
                         newTab.document.open();
-                        newTab.document.write(`
-                            <div style="padding: 20px; color: red; font-family: sans-serif;">
-                                <h3>Failed to fetch detail data.</h3>
-                                <p>Error: ${error.message}</p>
-                                <p>Please check the console for more details.</p>
-                            </div>
-                        `);
+                        newTab.document.write(`<div style="padding: 20px; color: red; font-family: sans-serif;">Failed to fetch detail data. Please check the console for errors.</div>`);
                         newTab.document.close();
                     }
                 }
