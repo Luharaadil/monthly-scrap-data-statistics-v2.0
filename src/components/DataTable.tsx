@@ -45,12 +45,6 @@ export function DataTable({ lang, primaryYear, compareYear, data, category, isCa
         labelZh: `${primaryYear} 混練膠料報廢`,
         getValue: (d: any) => d.data[primaryYear]?.mxRubber,
         formatter: formatNumber,
-      },
-      {
-        labelEn: `${compareYear}_MX RUBBER`,
-        labelZh: `${compareYear} 混練膠料報廢`,
-        getValue: (d: any) => d.data[compareYear]?.mxRubber,
-        formatter: formatNumber,
       }
     ] : []),
     ...(category === 'MX_CB' ? [
@@ -58,12 +52,6 @@ export function DataTable({ lang, primaryYear, compareYear, data, category, isCa
         labelEn: `${primaryYear}_MX CB`,
         labelZh: `${primaryYear} 混練碳煙報廢`,
         getValue: (d: any) => d.data[primaryYear]?.mxCbRubber,
-        formatter: formatNumber,
-      },
-      {
-        labelEn: `${compareYear}_MX CB`,
-        labelZh: `${compareYear} 混練碳煙報廢`,
-        getValue: (d: any) => d.data[compareYear]?.mxCbRubber,
         formatter: formatNumber,
       }
     ] : []),
@@ -73,12 +61,6 @@ export function DataTable({ lang, primaryYear, compareYear, data, category, isCa
         labelZh: `${primaryYear} 混練藥品報廢`,
         getValue: (d: any) => d.data[primaryYear]?.mxChmRubber,
         formatter: formatNumber,
-      },
-      {
-        labelEn: `${compareYear}_MX CHM`,
-        labelZh: `${compareYear} 混練藥品報廢`,
-        getValue: (d: any) => d.data[compareYear]?.mxChmRubber,
-        formatter: formatNumber,
       }
     ] : []),
     ...(category === 'CL_PLY' ? [
@@ -86,12 +68,6 @@ export function DataTable({ lang, primaryYear, compareYear, data, category, isCa
         labelEn: `${primaryYear}_CL PLY`,
         labelZh: `${primaryYear} 上膠簾布報廢`,
         getValue: (d: any) => d.data[primaryYear]?.clPlyRubber,
-        formatter: formatNumber,
-      },
-      {
-        labelEn: `${compareYear}_CL PLY`,
-        labelZh: `${compareYear} 上膠簾布報廢`,
-        getValue: (d: any) => d.data[compareYear]?.clPlyRubber,
         formatter: formatNumber,
       }
     ] : []),
@@ -101,12 +77,6 @@ export function DataTable({ lang, primaryYear, compareYear, data, category, isCa
         labelZh: `${primaryYear} 上膠原紗報廢`,
         getValue: (d: any) => d.data[primaryYear]?.clFabricRubber,
         formatter: formatNumber,
-      },
-      {
-        labelEn: `${compareYear}_CL FABRIC`,
-        labelZh: `${compareYear} 上膠原紗報廢`,
-        getValue: (d: any) => d.data[compareYear]?.clFabricRubber,
-        formatter: formatNumber,
       }
     ] : []),
     ...(category === 'CL_RB' ? [
@@ -114,12 +84,6 @@ export function DataTable({ lang, primaryYear, compareYear, data, category, isCa
         labelEn: `${primaryYear}_CL RB`,
         labelZh: `${primaryYear} 上膠膠料報廢`,
         getValue: (d: any) => d.data[primaryYear]?.clRbRubber,
-        formatter: formatNumber,
-      },
-      {
-        labelEn: `${compareYear}_CL RB`,
-        labelZh: `${compareYear} 上膠膠料報廢`,
-        getValue: (d: any) => d.data[compareYear]?.clRbRubber,
         formatter: formatNumber,
       }
     ] : []),
@@ -129,12 +93,6 @@ export function DataTable({ lang, primaryYear, compareYear, data, category, isCa
         labelZh: `${primaryYear} 上膠防擦布報廢`,
         getValue: (d: any) => d.data[primaryYear]?.clChRubber,
         formatter: formatNumber,
-      },
-      {
-        labelEn: `${compareYear}_CL CH`,
-        labelZh: `${compareYear} 上膠防擦布報廢`,
-        getValue: (d: any) => d.data[compareYear]?.clChRubber,
-        formatter: formatNumber,
       }
     ] : []),
     ...(category === 'CT_CH' ? [
@@ -142,12 +100,6 @@ export function DataTable({ lang, primaryYear, compareYear, data, category, isCa
         labelEn: `${primaryYear}_CT CH`,
         labelZh: `${primaryYear} 裁斷防擦布報廢`,
         getValue: (d: any) => d.data[primaryYear]?.ctChRubber,
-        formatter: formatNumber,
-      },
-      {
-        labelEn: `${compareYear}_CT CH`,
-        labelZh: `${compareYear} 裁斷防擦布報廢`,
-        getValue: (d: any) => d.data[compareYear]?.ctChRubber,
         formatter: formatNumber,
       }
     ] : []),
@@ -157,12 +109,6 @@ export function DataTable({ lang, primaryYear, compareYear, data, category, isCa
         labelZh: `${primaryYear} 裁斷防擦布報廢`,
         getValue: (d: any) => d.data[primaryYear]?.ctRbRubber,
         formatter: formatNumber,
-      },
-      {
-        labelEn: `${compareYear}_CT RB`,
-        labelZh: `${compareYear} 裁斷防擦布報廢`,
-        getValue: (d: any) => d.data[compareYear]?.ctRbRubber,
-        formatter: formatNumber,
       }
     ] : []),
     ...(category === 'CT_PLY' ? [
@@ -170,12 +116,6 @@ export function DataTable({ lang, primaryYear, compareYear, data, category, isCa
         labelEn: `${primaryYear}_CT PLY`,
         labelZh: `${primaryYear} 裁斷簾布報廢`,
         getValue: (d: any) => d.data[primaryYear]?.ctPlyRubber,
-        formatter: formatNumber,
-      },
-      {
-        labelEn: `${compareYear}_CT PLY`,
-        labelZh: `${compareYear} 裁斷簾布報廢`,
-        getValue: (d: any) => d.data[compareYear]?.ctPlyRubber,
         formatter: formatNumber,
       }
     ] : []),
@@ -185,12 +125,6 @@ export function DataTable({ lang, primaryYear, compareYear, data, category, isCa
         labelZh: `${primaryYear} 裁斷鋼絲報廢`,
         getValue: (d: any) => d.data[primaryYear]?.ctBwRubber,
         formatter: formatNumber,
-      },
-      {
-        labelEn: `${compareYear}_CT BW`,
-        labelZh: `${compareYear} 裁斷鋼絲報廢`,
-        getValue: (d: any) => d.data[compareYear]?.ctBwRubber,
-        formatter: formatNumber,
       }
     ] : []),
     ...(category === 'BD_RB' ? [
@@ -198,12 +132,6 @@ export function DataTable({ lang, primaryYear, compareYear, data, category, isCa
         labelEn: `${primaryYear}_BD RB`,
         labelZh: `${primaryYear} 成型膠料報廢`,
         getValue: (d: any) => d.data[primaryYear]?.bdRbRubber,
-        formatter: formatNumber,
-      },
-      {
-        labelEn: `${compareYear}_BD RB`,
-        labelZh: `${compareYear} 成型膠料報廢`,
-        getValue: (d: any) => d.data[compareYear]?.bdRbRubber,
         formatter: formatNumber,
       }
     ] : []),
@@ -213,12 +141,6 @@ export function DataTable({ lang, primaryYear, compareYear, data, category, isCa
         labelZh: `${primaryYear} 成型簾布報廢`,
         getValue: (d: any) => d.data[primaryYear]?.bdPlyRubber,
         formatter: formatNumber,
-      },
-      {
-        labelEn: `${compareYear}_BD PLY`,
-        labelZh: `${compareYear} 成型簾布報廢`,
-        getValue: (d: any) => d.data[compareYear]?.bdPlyRubber,
-        formatter: formatNumber,
       }
     ] : []),
     ...(category === 'BD_CH' ? [
@@ -226,12 +148,6 @@ export function DataTable({ lang, primaryYear, compareYear, data, category, isCa
         labelEn: `${primaryYear}_BD CH`,
         labelZh: `${primaryYear} 成型防擦布報廢`,
         getValue: (d: any) => d.data[primaryYear]?.bdChRubber,
-        formatter: formatNumber,
-      },
-      {
-        labelEn: `${compareYear}_BD CH`,
-        labelZh: `${compareYear} 成型防擦布報廢`,
-        getValue: (d: any) => d.data[compareYear]?.bdChRubber,
         formatter: formatNumber,
       }
     ] : []),
@@ -241,12 +157,6 @@ export function DataTable({ lang, primaryYear, compareYear, data, category, isCa
         labelZh: `${primaryYear} 成型鋼絲報廢`,
         getValue: (d: any) => d.data[primaryYear]?.bdBwRubber,
         formatter: formatNumber,
-      },
-      {
-        labelEn: `${compareYear}_BD BW`,
-        labelZh: `${compareYear} 成型鋼絲報廢`,
-        getValue: (d: any) => d.data[compareYear]?.bdBwRubber,
-        formatter: formatNumber,
       }
     ] : []),
     ...(category === 'RSIP_RB' ? [
@@ -254,12 +164,6 @@ export function DataTable({ lang, primaryYear, compareYear, data, category, isCa
         labelEn: `${primaryYear}_RSIP RB`,
         labelZh: `${primaryYear} 膠檢膠料報廢`,
         getValue: (d: any) => d.data[primaryYear]?.rispRubber,
-        formatter: formatNumber,
-      },
-      {
-        labelEn: `${compareYear}_RSIP RB`,
-        labelZh: `${compareYear} 膠檢膠料報廢`,
-        getValue: (d: any) => d.data[compareYear]?.rispRubber,
         formatter: formatNumber,
       }
     ] : []),
@@ -269,12 +173,6 @@ export function DataTable({ lang, primaryYear, compareYear, data, category, isCa
         labelZh: `${primaryYear} 膠檢簾布報廢`,
         getValue: (d: any) => d.data[primaryYear]?.rispPlyRubber,
         formatter: formatNumber,
-      },
-      {
-        labelEn: `${compareYear}_RSIP PLY`,
-        labelZh: `${compareYear} 膠檢簾布報廢`,
-        getValue: (d: any) => d.data[compareYear]?.rispPlyRubber,
-        formatter: formatNumber,
       }
     ] : []),
     ...(category === 'RSIP_CH' ? [
@@ -283,12 +181,6 @@ export function DataTable({ lang, primaryYear, compareYear, data, category, isCa
         labelZh: `${primaryYear} 膠檢防擦布報廢`,
         getValue: (d: any) => d.data[primaryYear]?.rispChRubber,
         formatter: formatNumber,
-      },
-      {
-        labelEn: `${compareYear}_RSIP CH`,
-        labelZh: `${compareYear} 膠檢防擦布報廢`,
-        getValue: (d: any) => d.data[compareYear]?.rispChRubber,
-        formatter: formatNumber,
       }
     ] : []),
     ...(category === 'EX_RB' ? [
@@ -296,12 +188,6 @@ export function DataTable({ lang, primaryYear, compareYear, data, category, isCa
         labelEn: `${primaryYear}_EX RUBBER`,
         labelZh: `${primaryYear} 押出膠料報廢`,
         getValue: (d: any) => d.data[primaryYear]?.exRubber,
-        formatter: formatNumber,
-      },
-      {
-        labelEn: `${compareYear}_EX RUBBER`,
-        labelZh: `${compareYear} 押出膠料報廢`,
-        getValue: (d: any) => d.data[compareYear]?.exRubber,
         formatter: formatNumber,
       }
     ] : []),

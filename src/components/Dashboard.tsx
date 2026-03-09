@@ -39,7 +39,7 @@ export function Dashboard() {
         logging: false,
         useCORS: true,
         allowTaint: true,
-        windowWidth: captureRef.current.scrollWidth,
+        windowWidth: Math.max(1400, captureRef.current.scrollWidth),
         windowHeight: captureRef.current.scrollHeight,
       });
       
@@ -79,7 +79,7 @@ export function Dashboard() {
       {/* Main Content Area - Full Screen */}
       <div 
         ref={captureRef}
-        className={`flex-1 p-4 lg:p-6 max-w-[1920px] mx-auto w-full flex flex-col gap-6 ${isCapturing ? 'h-auto overflow-visible' : ''}`}
+        className={`flex-1 p-4 lg:p-6 mx-auto flex flex-col gap-6 ${isCapturing ? 'min-w-[1400px] w-[1400px] max-w-[1400px] h-auto overflow-visible' : 'w-full max-w-[1920px]'}`}
       >
         
         {/* Chart Section with integrated Header */}

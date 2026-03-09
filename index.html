@@ -724,6 +724,54 @@
                 let section = "";
                 let scrapType = "";
                 
+                const translationDict = {
+                    // Headers
+                    "Date": "日期",
+                    "TYPE": "類型",
+                    "easy": "分類",
+                    "Reason": "原因",
+                    "Weight": "重量",
+                    "Scrap": "報廢",
+                    "Total": "總計",
+                    // Sections/Types
+                    "MX": "混練",
+                    "EX": "押出",
+                    "CL": "上膠",
+                    "CT": "裁斷",
+                    "BD": "成型",
+                    "CR": "加硫",
+                    "RISP": "膠檢",
+                    "RUBBER": "膠料",
+                    "PLY": "簾布",
+                    "BW": "鋼絲",
+                    "CHAFER": "防擦布",
+                    "CHEMICAL": "藥品",
+                    "CARBON BLACK": "碳煙",
+                    // UI Elements
+                    "Filter...": "過濾...",
+                    "Loading detailed data for": "正在載入詳細數據",
+                    "Month": "月份",
+                    "Details for": "詳細數據",
+                    "No detailed data found.": "找不到詳細數據。",
+                    "Failed to fetch detail data. Please check the console for errors.": "獲取詳細數據失敗。請檢查控制台以獲取錯誤信息。",
+                    // Add more reasons or other terms here as needed
+                    // "Example Reason": "範例原因",
+                };
+
+                const translate = (text) => {
+                    if (lang !== 'zh' || !text) return text;
+                    const strText = String(text);
+                    if (translationDict[strText]) return translationDict[strText];
+                    
+                    // Try case-insensitive exact match
+                    const lowerText = strText.toLowerCase();
+                    for (const [key, value] of Object.entries(translationDict)) {
+                        if (key.toLowerCase() === lowerText) return value;
+                    }
+                    
+                    return text;
+                };
+                
                 // The labelEn format is typically "YYYY_SECTION SCRAP_TYPE"
                 // e.g., "2024_MX RUBBER" or "2024_EX RUBBER"
                 const parts = labelEn.split('_');
@@ -775,7 +823,7 @@
                     <!DOCTYPE html>
                     <html>
                     <head>
-                        <title>Loading Details...</title>
+                        <title>${translate('Loading Details...')}</title>
                         <style>
                             body { font-family: 'Inter', sans-serif; padding: 20px; background-color: #f9fafb; color: #111827; }
                             .loading { display: flex; justify-content: center; align-items: center; height: 200px; font-size: 18px; color: #6b7280; }
@@ -786,7 +834,7 @@
                     <body>
                         <div class="loading">
                             <div class="spinner"></div>
-                            Loading detailed data for ${labelEn} (Month: ${monthStr})...
+                            ${translate('Loading detailed data for')} ${labelEn} (${translate('Month')}: ${monthStr})...
                         </div>
                     </body>
                     </html>
@@ -796,7 +844,10 @@
                 const GAS_URL = "https://script.google.com/macros/s/AKfycbwPfPWC8sPVCM0whUDlYfhKraQuROo_pvUhZ2rLHUvSYnkh7oXtwazdjKHYQY1OBJVh2Q/exec";
                 
                 try {
-                    const response = await fetch(GAS_URL);
+                    const response = await fetch(GAS_URL, { mode: 'cors' });
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
                     
                     // Item seven: convert the received response text into a javascript object notation array
                     const dataText = await response.text();
@@ -808,55 +859,65 @@
                         dataArray = [];
                     }
                     
+                    if (!Array.isArray(dataArray)) {
+                        console.error("Data is not an array:", dataArray);
+                        dataArray = [];
+                    }
+                    
                     // Item eight: filter this array to extract only the objects where the first column matches your month and year string and the column J matches your section string and the column G matches your scrap type string
                     const headerRow = dataArray.length > 0 ? dataArray[0] : null;
                     const filteredData = dataArray.filter((item, index) => {
-                        if (index === 0) return false; // Skip header for filtering
-                        
-                        // Based on the Google Sheet data structure:
-                        // col 0: Date
-                        // col 6: TYPE (Scrap Type)
-                        // col 9: easy (Section - MX, EX, CR, etc.)
-                        const colA = Array.isArray(item) ? item[0] : (item['Column A'] || item['Date'] || Object.values(item)[0]);
-                        const colG = Array.isArray(item) ? item[6] : (item['Column G'] || item['TYPE'] || Object.values(item)[6]);
-                        const colJ = Array.isArray(item) ? item[9] : (item['Column J'] || item['easy'] || Object.values(item)[9]);
-                        
-                        let matchDate = false;
-                        if (colA) {
-                            const colAStr = String(colA);
-                            const dateObj = new Date(colA);
+                        try {
+                            if (index === 0) return false; // Skip header for filtering
                             
-                            if (!isNaN(dateObj.getTime())) {
-                                // Add 12 hours to handle timezone offsets (e.g., IST midnight is previous day 18:30 UTC)
-                                // This safely pushes the date into the correct month regardless of local timezone
-                                dateObj.setUTCHours(dateObj.getUTCHours() + 12);
-                                const itemYear = dateObj.getUTCFullYear();
-                                const itemMonth = dateObj.getUTCMonth() + 1;
-                                matchDate = (String(itemYear) === String(year)) && (Number(itemMonth) === Number(monthNum));
-                            } else {
-                                // Fallback for non-standard date strings
-                                matchDate = colAStr.includes(searchString) || 
-                                            colAStr.includes(`${monthNum}-${year}`) || 
-                                            colAStr.includes(`${monthNum}/${year}`);
+                            // Based on the Google Sheet data structure:
+                            // col 0: Date
+                            // col 6: TYPE (Scrap Type)
+                            // col 9: easy (Section - MX, EX, CR, etc.)
+                            const colA = Array.isArray(item) ? item[0] : (item['Column A'] || item['Date'] || Object.values(item)[0]);
+                            const colG = Array.isArray(item) ? item[6] : (item['Column G'] || item['TYPE'] || Object.values(item)[6]);
+                            const colJ = Array.isArray(item) ? item[9] : (item['Column J'] || item['easy'] || Object.values(item)[9]);
+                            
+                            let matchDate = false;
+                            if (colA) {
+                                const colAStr = String(colA);
+                                const dateObj = new Date(colA);
+                                
+                                if (!isNaN(dateObj.getTime())) {
+                                    // Add 12 hours to handle timezone offsets (e.g., IST midnight is previous day 18:30 UTC)
+                                    // This safely pushes the date into the correct month regardless of local timezone
+                                    dateObj.setUTCHours(dateObj.getUTCHours() + 12);
+                                    const itemYear = dateObj.getUTCFullYear();
+                                    const itemMonth = dateObj.getUTCMonth() + 1;
+                                    matchDate = (String(itemYear) === String(year)) && (Number(itemMonth) === Number(monthNum));
+                                } else {
+                                    // Fallback for non-standard date strings
+                                    matchDate = colAStr.includes(searchString) || 
+                                                colAStr.includes(`${monthNum}-${year}`) || 
+                                                colAStr.includes(`${monthNum}/${year}`);
+                                }
                             }
-                        }
-                        
-                        const matchSection = section === "TOTAL" ? true : String(colJ).trim().toUpperCase() === mappedSection.toUpperCase();
-                        
-                        let matchScrapType = false;
-                        if (section === "TOTAL") {
-                            if (scrapType === "TOTAL") {
-                                matchScrapType = true;
-                            } else if (scrapType === "PLY/CH") {
-                                matchScrapType = String(colG).trim().toUpperCase() === "PLY" || String(colG).trim().toUpperCase() === "CHAFER";
+                            
+                            const matchSection = section === "TOTAL" ? true : String(colJ).trim().toUpperCase() === mappedSection.toUpperCase();
+                            
+                            let matchScrapType = false;
+                            if (section === "TOTAL") {
+                                if (scrapType === "TOTAL") {
+                                    matchScrapType = true;
+                                } else if (scrapType === "PLY/CH") {
+                                    matchScrapType = String(colG).trim().toUpperCase() === "PLY" || String(colG).trim().toUpperCase() === "CHAFER";
+                                } else {
+                                    matchScrapType = String(colG).trim().toUpperCase() === scrapType.toUpperCase();
+                                }
                             } else {
-                                matchScrapType = String(colG).trim().toUpperCase() === scrapType.toUpperCase();
+                                matchScrapType = String(colG).trim().toUpperCase() === mappedScrapType.toUpperCase();
                             }
-                        } else {
-                            matchScrapType = String(colG).trim().toUpperCase() === mappedScrapType.toUpperCase();
+                            
+                            return matchDate && matchSection && matchScrapType;
+                        } catch (e) {
+                            console.error("Error filtering row:", e);
+                            return false;
                         }
-                        
-                        return matchDate && matchSection && matchScrapType;
                     });
                     
                     if (headerRow && filteredData.length > 0 && Array.isArray(filteredData[0])) {
@@ -864,12 +925,14 @@
                     }
                     
                     // Item nine: update the new browser tab to display the detailed data
+                    if (!newTab || newTab.closed) return;
+                    
                     newTab.document.open();
                     newTab.document.write(`
                         <!DOCTYPE html>
                         <html>
                         <head>
-                            <title>Details for ${labelEn} - Month ${monthStr}</title>
+                            <title>${translate('Details for')} ${labelEn} - ${translate('Month')} ${monthStr}</title>
                             <style>
                                 body { font-family: 'Inter', sans-serif; padding: 20px; background-color: #f9fafb; color: #111827; }
                                 h3 { margin-top: 0; margin-bottom: 20px; font-size: 20px; font-weight: 600; }
@@ -887,7 +950,7 @@
                         </head>
                         <body>
                             <div class="container">
-                                <h3>Details for ${labelEn} - Month ${monthStr}</h3>
+                                <h3>${translate('Details for')} ${labelEn} - ${translate('Month')} ${monthStr}</h3>
                                 <div id="content"></div>
                             </div>
                             <script>
@@ -934,7 +997,7 @@
                                         const totalCells = totalRow.querySelectorAll('td');
                                         totalCells.forEach((cell, index) => {
                                             if (index === 0) {
-                                                cell.textContent = 'Total';
+                                                cell.textContent = '${translate('Total')}';
                                             } else if (hasNumericColumn[index]) {
                                                 cell.textContent = Number.isInteger(totals[index]) ? totals[index] : totals[index].toFixed(2);
                                             } else {
@@ -955,7 +1018,7 @@
                     if (filteredData.length === 0) {
                         const noDataDiv = newTab.document.createElement('div');
                         noDataDiv.className = 'no-data';
-                        noDataDiv.textContent = 'No detailed data found.';
+                        noDataDiv.textContent = translate('No detailed data found.');
                         contentDiv.appendChild(noDataDiv);
                     } else {
                         const isObject = typeof filteredData[0] === 'object' && filteredData[0] !== null;
@@ -969,7 +1032,7 @@
                             const headerRow = newTab.document.createElement('tr');
                             headers.forEach((header, index) => {
                                 const th = newTab.document.createElement('th');
-                                th.innerHTML = `<div>${header}</div><input type="text" class="filter-input" data-col="${index}" placeholder="Filter..." onkeyup="filterTable()">`;
+                                th.innerHTML = `<div>${translate(header)}</div><input type="text" class="filter-input" data-col="${index}" placeholder="${translate('Filter...')}" onkeyup="filterTable()">`;
                                 headerRow.appendChild(th);
                             });
                             thead.appendChild(headerRow);
@@ -992,7 +1055,7 @@
                                         }
                                     }
                                     
-                                    td.textContent = cellText;
+                                    td.textContent = translate(cellText);
                                     tr.appendChild(td);
                                 });
                                 tbody.appendChild(tr);
@@ -1033,9 +1096,9 @@
                                     }
                                     
                                     if (rowIndex === 0) {
-                                        cellElement.innerHTML = `<div>${cellText}</div><input type="text" class="filter-input" data-col="${cellIndex}" placeholder="Filter..." onkeyup="filterTable()">`;
+                                        cellElement.innerHTML = `<div>${translate(cellText)}</div><input type="text" class="filter-input" data-col="${cellIndex}" placeholder="${translate('Filter...')}" onkeyup="filterTable()">`;
                                     } else {
-                                        cellElement.textContent = cellText;
+                                        cellElement.textContent = translate(cellText);
                                     }
                                     tr.appendChild(cellElement);
                                 });
@@ -1067,14 +1130,20 @@
                             });
                         }
                     }
-                    newTab.document.close();
+                    if (newTab && !newTab.closed) {
+                        newTab.document.close();
+                    }
                     
                 } catch (error) {
                     console.error("Error fetching detail data:", error);
-                    if (newTab) {
-                        newTab.document.open();
-                        newTab.document.write(`<div style="padding: 20px; color: red; font-family: sans-serif;">Failed to fetch detail data. Please check the console for errors.</div>`);
-                        newTab.document.close();
+                    if (newTab && !newTab.closed) {
+                        try {
+                            newTab.document.open();
+                            newTab.document.write(`<div style="padding: 20px; color: red; font-family: sans-serif;">${translate('Failed to fetch detail data. Please check the console for errors.')}</div>`);
+                            newTab.document.close();
+                        } catch (e) {
+                            console.error("Failed to write error to new tab:", e);
+                        }
                     }
                 }
             };
@@ -1103,13 +1172,6 @@
                         getValue: (d) => d.data[primaryYear]?.mxRubber,
                         formatter: formatNumber,
                         year: primaryYear,
-                    },
-                    {
-                        labelEn: `${compareYear}_MX RUBBER`,
-                        labelZh: `${compareYear} 混練膠料報廢`,
-                        getValue: (d) => d.data[compareYear]?.mxRubber,
-                        formatter: formatNumber,
-                        year: compareYear,
                     }
                 ] : []),
                 ...(category === 'MX_CB' ? [
@@ -1119,13 +1181,6 @@
                         getValue: (d) => d.data[primaryYear]?.mxCbRubber,
                         formatter: formatNumber,
                         year: primaryYear,
-                    },
-                    {
-                        labelEn: `${compareYear}_MX CB`,
-                        labelZh: `${compareYear} 混練碳煙報廢`,
-                        getValue: (d) => d.data[compareYear]?.mxCbRubber,
-                        formatter: formatNumber,
-                        year: compareYear,
                     }
                 ] : []),
                 ...(category === 'MX_CHM' ? [
@@ -1135,13 +1190,6 @@
                         getValue: (d) => d.data[primaryYear]?.mxChmRubber,
                         formatter: formatNumber,
                         year: primaryYear,
-                    },
-                    {
-                        labelEn: `${compareYear}_MX CHM`,
-                        labelZh: `${compareYear} 混練藥品報廢`,
-                        getValue: (d) => d.data[compareYear]?.mxChmRubber,
-                        formatter: formatNumber,
-                        year: compareYear,
                     }
                 ] : []),
                 ...(category === 'CL_PLY' ? [
@@ -1151,13 +1199,6 @@
                         getValue: (d) => d.data[primaryYear]?.clPlyRubber,
                         formatter: formatNumber,
                         year: primaryYear,
-                    },
-                    {
-                        labelEn: `${compareYear}_CL PLY`,
-                        labelZh: `${compareYear} 上膠簾布報廢`,
-                        getValue: (d) => d.data[compareYear]?.clPlyRubber,
-                        formatter: formatNumber,
-                        year: compareYear,
                     }
                 ] : []),
                 ...(category === 'CL_FABRIC' ? [
@@ -1167,13 +1208,6 @@
                         getValue: (d) => d.data[primaryYear]?.clFabricRubber,
                         formatter: formatNumber,
                         year: primaryYear,
-                    },
-                    {
-                        labelEn: `${compareYear}_CL FABRIC`,
-                        labelZh: `${compareYear} 上膠原紗報廢`,
-                        getValue: (d) => d.data[compareYear]?.clFabricRubber,
-                        formatter: formatNumber,
-                        year: compareYear,
                     }
                 ] : []),
                 ...(category === 'CL_RB' ? [
@@ -1183,13 +1217,6 @@
                         getValue: (d) => d.data[primaryYear]?.clRbRubber,
                         formatter: formatNumber,
                         year: primaryYear,
-                    },
-                    {
-                        labelEn: `${compareYear}_CL RB`,
-                        labelZh: `${compareYear} 上膠膠料報廢`,
-                        getValue: (d) => d.data[compareYear]?.clRbRubber,
-                        formatter: formatNumber,
-                        year: compareYear,
                     }
                 ] : []),
                 ...(category === 'CL_CH' ? [
@@ -1199,13 +1226,6 @@
                         getValue: (d) => d.data[primaryYear]?.clChRubber,
                         formatter: formatNumber,
                         year: primaryYear,
-                    },
-                    {
-                        labelEn: `${compareYear}_CL CH`,
-                        labelZh: `${compareYear} 上膠防擦布報廢`,
-                        getValue: (d) => d.data[compareYear]?.clChRubber,
-                        formatter: formatNumber,
-                        year: compareYear,
                     }
                 ] : []),
                 ...(category === 'CT_CH' ? [
@@ -1215,13 +1235,6 @@
                         getValue: (d) => d.data[primaryYear]?.ctChRubber,
                         formatter: formatNumber,
                         year: primaryYear,
-                    },
-                    {
-                        labelEn: `${compareYear}_CT CH`,
-                        labelZh: `${compareYear} 裁斷防擦布報廢`,
-                        getValue: (d) => d.data[compareYear]?.ctChRubber,
-                        formatter: formatNumber,
-                        year: compareYear,
                     }
                 ] : []),
                 ...(category === 'CT_RB' ? [
@@ -1231,13 +1244,6 @@
                         getValue: (d) => d.data[primaryYear]?.ctRbRubber,
                         formatter: formatNumber,
                         year: primaryYear,
-                    },
-                    {
-                        labelEn: `${compareYear}_CT RB`,
-                        labelZh: `${compareYear} 裁斷防擦布報廢`,
-                        getValue: (d) => d.data[compareYear]?.ctRbRubber,
-                        formatter: formatNumber,
-                        year: compareYear,
                     }
                 ] : []),
                 ...(category === 'CT_PLY' ? [
@@ -1247,13 +1253,6 @@
                         getValue: (d) => d.data[primaryYear]?.ctPlyRubber,
                         formatter: formatNumber,
                         year: primaryYear,
-                    },
-                    {
-                        labelEn: `${compareYear}_CT PLY`,
-                        labelZh: `${compareYear} 裁斷簾布報廢`,
-                        getValue: (d) => d.data[compareYear]?.ctPlyRubber,
-                        formatter: formatNumber,
-                        year: compareYear,
                     }
                 ] : []),
                 ...(category === 'CT_BW' ? [
@@ -1263,13 +1262,6 @@
                         getValue: (d) => d.data[primaryYear]?.ctBwRubber,
                         formatter: formatNumber,
                         year: primaryYear,
-                    },
-                    {
-                        labelEn: `${compareYear}_CT BW`,
-                        labelZh: `${compareYear} 裁斷鋼絲報廢`,
-                        getValue: (d) => d.data[compareYear]?.ctBwRubber,
-                        formatter: formatNumber,
-                        year: compareYear,
                     }
                 ] : []),
                 ...(category === 'BD_RB' ? [
@@ -1279,13 +1271,6 @@
                         getValue: (d) => d.data[primaryYear]?.bdRbRubber,
                         formatter: formatNumber,
                         year: primaryYear,
-                    },
-                    {
-                        labelEn: `${compareYear}_BD RB`,
-                        labelZh: `${compareYear} 成型膠料報廢`,
-                        getValue: (d) => d.data[compareYear]?.bdRbRubber,
-                        formatter: formatNumber,
-                        year: compareYear,
                     }
                 ] : []),
                 ...(category === 'BD_PLY' ? [
@@ -1295,13 +1280,6 @@
                         getValue: (d) => d.data[primaryYear]?.bdPlyRubber,
                         formatter: formatNumber,
                         year: primaryYear,
-                    },
-                    {
-                        labelEn: `${compareYear}_BD PLY`,
-                        labelZh: `${compareYear} 成型簾布報廢`,
-                        getValue: (d) => d.data[compareYear]?.bdPlyRubber,
-                        formatter: formatNumber,
-                        year: compareYear,
                     }
                 ] : []),
                 ...(category === 'BD_CH' ? [
@@ -1311,13 +1289,6 @@
                         getValue: (d) => d.data[primaryYear]?.bdChRubber,
                         formatter: formatNumber,
                         year: primaryYear,
-                    },
-                    {
-                        labelEn: `${compareYear}_BD CH`,
-                        labelZh: `${compareYear} 成型防擦布報廢`,
-                        getValue: (d) => d.data[compareYear]?.bdChRubber,
-                        formatter: formatNumber,
-                        year: compareYear,
                     }
                 ] : []),
                 ...(category === 'BD_BW' ? [
@@ -1327,13 +1298,6 @@
                         getValue: (d) => d.data[primaryYear]?.bdBwRubber,
                         formatter: formatNumber,
                         year: primaryYear,
-                    },
-                    {
-                        labelEn: `${compareYear}_BD BW`,
-                        labelZh: `${compareYear} 成型鋼絲報廢`,
-                        getValue: (d) => d.data[compareYear]?.bdBwRubber,
-                        formatter: formatNumber,
-                        year: compareYear,
                     }
                 ] : []),
                 ...(category === 'RSIP_RB' ? [
@@ -1343,13 +1307,6 @@
                         getValue: (d) => d.data[primaryYear]?.rispRubber,
                         formatter: formatNumber,
                         year: primaryYear,
-                    },
-                    {
-                        labelEn: `${compareYear}_RSIP RB`,
-                        labelZh: `${compareYear} 膠檢膠料報廢`,
-                        getValue: (d) => d.data[compareYear]?.rispRubber,
-                        formatter: formatNumber,
-                        year: compareYear,
                     }
                 ] : []),
                 ...(category === 'RSIP_PLY' ? [
@@ -1359,13 +1316,6 @@
                         getValue: (d) => d.data[primaryYear]?.rispPlyRubber,
                         formatter: formatNumber,
                         year: primaryYear,
-                    },
-                    {
-                        labelEn: `${compareYear}_RSIP PLY`,
-                        labelZh: `${compareYear} 膠檢簾布報廢`,
-                        getValue: (d) => d.data[compareYear]?.rispPlyRubber,
-                        formatter: formatNumber,
-                        year: compareYear,
                     }
                 ] : []),
                 ...(category === 'RSIP_CH' ? [
@@ -1375,13 +1325,6 @@
                         getValue: (d) => d.data[primaryYear]?.rispChRubber,
                         formatter: formatNumber,
                         year: primaryYear,
-                    },
-                    {
-                        labelEn: `${compareYear}_RSIP CH`,
-                        labelZh: `${compareYear} 膠檢防擦布報廢`,
-                        getValue: (d) => d.data[compareYear]?.rispChRubber,
-                        formatter: formatNumber,
-                        year: compareYear,
                     }
                 ] : []),
                 ...(category === 'EX_RB' ? [
@@ -1391,13 +1334,6 @@
                         getValue: (d) => d.data[primaryYear]?.exRubber,
                         formatter: formatNumber,
                         year: primaryYear,
-                    },
-                    {
-                        labelEn: `${compareYear}_EX RUBBER`,
-                        labelZh: `${compareYear} 押出膠料報廢`,
-                        getValue: (d) => d.data[compareYear]?.exRubber,
-                        formatter: formatNumber,
-                        year: compareYear,
                     }
                 ] : []),
                 ...(category === 'RUBBER ALL' ? [
@@ -1409,25 +1345,11 @@
                         year: primaryYear,
                     },
                     {
-                        labelEn: `${compareYear}_MX RUBBER`,
-                        labelZh: `${compareYear} 混練膠料報廢`,
-                        getValue: (d) => d.data[compareYear]?.mxRubber,
-                        formatter: formatNumber,
-                        year: compareYear,
-                    },
-                    {
                         labelEn: `${primaryYear}_EX RUBBER`,
                         labelZh: `${primaryYear} 押出膠料報廢`,
                         getValue: (d) => d.data[primaryYear]?.exRubber,
                         formatter: formatNumber,
                         year: primaryYear,
-                    },
-                    {
-                        labelEn: `${compareYear}_EX RUBBER`,
-                        labelZh: `${compareYear} 押出膠料報廢`,
-                        getValue: (d) => d.data[compareYear]?.exRubber,
-                        formatter: formatNumber,
-                        year: compareYear,
                     },
                     {
                         labelEn: `${primaryYear}_CL RUBBER`,
@@ -1437,25 +1359,11 @@
                         year: primaryYear,
                     },
                     {
-                        labelEn: `${compareYear}_CL RUBBER`,
-                        labelZh: `${compareYear} 上膠膠料報廢`,
-                        getValue: (d) => d.data[compareYear]?.clRubber,
-                        formatter: formatNumber,
-                        year: compareYear,
-                    },
-                    {
                         labelEn: `${primaryYear}_CT RUBBER`,
                         labelZh: `${primaryYear} 裁斷膠料報廢`,
                         getValue: (d) => d.data[primaryYear]?.ctRubber,
                         formatter: formatNumber,
                         year: primaryYear,
-                    },
-                    {
-                        labelEn: `${compareYear}_CT RUBBER`,
-                        labelZh: `${compareYear} 裁斷膠料報廢`,
-                        getValue: (d) => d.data[compareYear]?.ctRubber,
-                        formatter: formatNumber,
-                        year: compareYear,
                     },
                     {
                         labelEn: `${primaryYear}_CURING RUBBER`,
@@ -1465,25 +1373,11 @@
                         year: primaryYear,
                     },
                     {
-                        labelEn: `${compareYear}_CURING RUBBER`,
-                        labelZh: `${compareYear} 加硫膠料報廢`,
-                        getValue: (d) => d.data[compareYear]?.curingRubber,
-                        formatter: formatNumber,
-                        year: compareYear,
-                    },
-                    {
                         labelEn: `${primaryYear}_RISP RUBBER`,
                         labelZh: `${primaryYear} 膠檢膠料報廢`,
                         getValue: (d) => d.data[primaryYear]?.rispRubber,
                         formatter: formatNumber,
                         year: primaryYear,
-                    },
-                    {
-                        labelEn: `${compareYear}_RISP RUBBER`,
-                        labelZh: `${compareYear} 膠檢膠料報廢`,
-                        getValue: (d) => d.data[compareYear]?.rispRubber,
-                        formatter: formatNumber,
-                        year: compareYear,
                     }
                 ] : []),
                 ...(category === 'PLY ALL' ? [
@@ -1495,25 +1389,11 @@
                         year: primaryYear,
                     },
                     {
-                        labelEn: `${compareYear}_EX PLY`,
-                        labelZh: `${compareYear} 押出簾布報廢`,
-                        getValue: (d) => d.data[compareYear]?.exPlyRubber,
-                        formatter: formatNumber,
-                        year: compareYear,
-                    },
-                    {
                         labelEn: `${primaryYear}_CL PLY`,
                         labelZh: `${primaryYear} 上膠簾布報廢`,
                         getValue: (d) => d.data[primaryYear]?.clPlyRubber,
                         formatter: formatNumber,
                         year: primaryYear,
-                    },
-                    {
-                        labelEn: `${compareYear}_CL PLY`,
-                        labelZh: `${compareYear} 上膠簾布報廢`,
-                        getValue: (d) => d.data[compareYear]?.clPlyRubber,
-                        formatter: formatNumber,
-                        year: compareYear,
                     },
                     {
                         labelEn: `${primaryYear}_CT PLY`,
@@ -1523,13 +1403,6 @@
                         year: primaryYear,
                     },
                     {
-                        labelEn: `${compareYear}_CT PLY`,
-                        labelZh: `${compareYear} 裁斷簾布報廢`,
-                        getValue: (d) => d.data[compareYear]?.ctPlyRubber,
-                        formatter: formatNumber,
-                        year: compareYear,
-                    },
-                    {
                         labelEn: `${primaryYear}_BD PLY`,
                         labelZh: `${primaryYear} 成型簾布報廢`,
                         getValue: (d) => d.data[primaryYear]?.bdPlyRubber,
@@ -1537,25 +1410,11 @@
                         year: primaryYear,
                     },
                     {
-                        labelEn: `${compareYear}_BD PLY`,
-                        labelZh: `${compareYear} 成型簾布報廢`,
-                        getValue: (d) => d.data[compareYear]?.bdPlyRubber,
-                        formatter: formatNumber,
-                        year: compareYear,
-                    },
-                    {
                         labelEn: `${primaryYear}_RISP PLY`,
                         labelZh: `${primaryYear} 膠檢簾布報廢`,
                         getValue: (d) => d.data[primaryYear]?.rispPlyRubber,
                         formatter: formatNumber,
                         year: primaryYear,
-                    },
-                    {
-                        labelEn: `${compareYear}_RISP PLY`,
-                        labelZh: `${compareYear} 膠檢簾布報廢`,
-                        getValue: (d) => d.data[compareYear]?.rispPlyRubber,
-                        formatter: formatNumber,
-                        year: compareYear,
                     }
                 ] : []),
                 ...(category === 'BW ALL' ? [
@@ -1567,13 +1426,6 @@
                         year: primaryYear,
                     },
                     {
-                        labelEn: `${compareYear}_CT BW`,
-                        labelZh: `${compareYear} 裁斷鋼絲報廢`,
-                        getValue: (d) => d.data[compareYear]?.ctBwRubber,
-                        formatter: formatNumber,
-                        year: compareYear,
-                    },
-                    {
                         labelEn: `${primaryYear}_BD BW`,
                         labelZh: `${primaryYear} 成型鋼絲報廢`,
                         getValue: (d) => d.data[primaryYear]?.bdBwRubber,
@@ -1581,25 +1433,11 @@
                         year: primaryYear,
                     },
                     {
-                        labelEn: `${compareYear}_BD BW`,
-                        labelZh: `${compareYear} 成型鋼絲報廢`,
-                        getValue: (d) => d.data[compareYear]?.bdBwRubber,
-                        formatter: formatNumber,
-                        year: compareYear,
-                    },
-                    {
                         labelEn: `${primaryYear}_RSIP BW`,
                         labelZh: `${primaryYear} 膠檢鋼絲報廢`,
                         getValue: (d) => d.data[primaryYear]?.rsipBwRubber,
                         formatter: formatNumber,
                         year: primaryYear,
-                    },
-                    {
-                        labelEn: `${compareYear}_RSIP BW`,
-                        labelZh: `${compareYear} 膠檢鋼絲報廢`,
-                        getValue: (d) => d.data[compareYear]?.rsipBwRubber,
-                        formatter: formatNumber,
-                        year: compareYear,
                     }
                 ] : []),
                 ...(category === 'CH ALL' ? [
@@ -1611,25 +1449,11 @@
                         year: primaryYear,
                     },
                     {
-                        labelEn: `${compareYear}_CL CH`,
-                        labelZh: `${compareYear} 上膠防擦布報廢`,
-                        getValue: (d) => d.data[compareYear]?.clChRubber,
-                        formatter: formatNumber,
-                        year: compareYear,
-                    },
-                    {
                         labelEn: `${primaryYear}_CT CH`,
                         labelZh: `${primaryYear} 裁斷防擦布報廢`,
                         getValue: (d) => d.data[primaryYear]?.ctChRubber,
                         formatter: formatNumber,
                         year: primaryYear,
-                    },
-                    {
-                        labelEn: `${compareYear}_CT CH`,
-                        labelZh: `${compareYear} 裁斷防擦布報廢`,
-                        getValue: (d) => d.data[compareYear]?.ctChRubber,
-                        formatter: formatNumber,
-                        year: compareYear,
                     },
                     {
                         labelEn: `${primaryYear}_BD CH`,
@@ -1639,25 +1463,11 @@
                         year: primaryYear,
                     },
                     {
-                        labelEn: `${compareYear}_BD CH`,
-                        labelZh: `${compareYear} 成型防擦布報廢`,
-                        getValue: (d) => d.data[compareYear]?.bdChRubber,
-                        formatter: formatNumber,
-                        year: compareYear,
-                    },
-                    {
                         labelEn: `${primaryYear}_RSIP CH`,
                         labelZh: `${primaryYear} 膠檢防擦布報廢`,
                         getValue: (d) => d.data[primaryYear]?.rispChRubber,
                         formatter: formatNumber,
                         year: primaryYear,
-                    },
-                    {
-                        labelEn: `${compareYear}_RSIP CH`,
-                        labelZh: `${compareYear} 膠檢防擦布報廢`,
-                        getValue: (d) => d.data[compareYear]?.rispChRubber,
-                        formatter: formatNumber,
-                        year: compareYear,
                     }
                 ] : []),
                 ...(category === 'PLY/CH ALL' ? [
@@ -1669,25 +1479,11 @@
                         year: primaryYear,
                     },
                     {
-                        labelEn: `${compareYear}_EX PLY`,
-                        labelZh: `${compareYear} 押出簾布報廢`,
-                        getValue: (d) => d.data[compareYear]?.exPlyRubber,
-                        formatter: formatNumber,
-                        year: compareYear,
-                    },
-                    {
                         labelEn: `${primaryYear}_CL PLY`,
                         labelZh: `${primaryYear} 上膠簾布報廢`,
                         getValue: (d) => d.data[primaryYear]?.clPlyRubber,
                         formatter: formatNumber,
                         year: primaryYear,
-                    },
-                    {
-                        labelEn: `${compareYear}_CL PLY`,
-                        labelZh: `${compareYear} 上膠簾布報廢`,
-                        getValue: (d) => d.data[compareYear]?.clPlyRubber,
-                        formatter: formatNumber,
-                        year: compareYear,
                     },
                     {
                         labelEn: `${primaryYear}_CT PLY`,
@@ -1697,25 +1493,11 @@
                         year: primaryYear,
                     },
                     {
-                        labelEn: `${compareYear}_CT PLY`,
-                        labelZh: `${compareYear} 裁斷簾布報廢`,
-                        getValue: (d) => d.data[compareYear]?.ctPlyRubber,
-                        formatter: formatNumber,
-                        year: compareYear,
-                    },
-                    {
                         labelEn: `${primaryYear}_BD PLY`,
                         labelZh: `${primaryYear} 成型簾布報廢`,
                         getValue: (d) => d.data[primaryYear]?.bdPlyRubber,
                         formatter: formatNumber,
                         year: primaryYear,
-                    },
-                    {
-                        labelEn: `${compareYear}_BD PLY`,
-                        labelZh: `${compareYear} 成型簾布報廢`,
-                        getValue: (d) => d.data[compareYear]?.bdPlyRubber,
-                        formatter: formatNumber,
-                        year: compareYear,
                     },
                     {
                         labelEn: `${primaryYear}_RISP PLY`,
@@ -1725,25 +1507,11 @@
                         year: primaryYear,
                     },
                     {
-                        labelEn: `${compareYear}_RISP PLY`,
-                        labelZh: `${compareYear} 膠檢簾布報廢`,
-                        getValue: (d) => d.data[compareYear]?.rispPlyRubber,
-                        formatter: formatNumber,
-                        year: compareYear,
-                    },
-                    {
                         labelEn: `${primaryYear}_CL CH`,
                         labelZh: `${primaryYear} 上膠防擦布報廢`,
                         getValue: (d) => d.data[primaryYear]?.clChRubber,
                         formatter: formatNumber,
                         year: primaryYear,
-                    },
-                    {
-                        labelEn: `${compareYear}_CL CH`,
-                        labelZh: `${compareYear} 上膠防擦布報廢`,
-                        getValue: (d) => d.data[compareYear]?.clChRubber,
-                        formatter: formatNumber,
-                        year: compareYear,
                     },
                     {
                         labelEn: `${primaryYear}_CT CH`,
@@ -1753,13 +1521,6 @@
                         year: primaryYear,
                     },
                     {
-                        labelEn: `${compareYear}_CT CH`,
-                        labelZh: `${compareYear} 裁斷防擦布報廢`,
-                        getValue: (d) => d.data[compareYear]?.ctChRubber,
-                        formatter: formatNumber,
-                        year: compareYear,
-                    },
-                    {
                         labelEn: `${primaryYear}_BD CH`,
                         labelZh: `${primaryYear} 成型防擦布報廢`,
                         getValue: (d) => d.data[primaryYear]?.bdChRubber,
@@ -1767,25 +1528,11 @@
                         year: primaryYear,
                     },
                     {
-                        labelEn: `${compareYear}_BD CH`,
-                        labelZh: `${compareYear} 成型防擦布報廢`,
-                        getValue: (d) => d.data[compareYear]?.bdChRubber,
-                        formatter: formatNumber,
-                        year: compareYear,
-                    },
-                    {
                         labelEn: `${primaryYear}_RSIP CH`,
                         labelZh: `${primaryYear} 膠檢防擦布報廢`,
                         getValue: (d) => d.data[primaryYear]?.rispChRubber,
                         formatter: formatNumber,
                         year: primaryYear,
-                    },
-                    {
-                        labelEn: `${compareYear}_RSIP CH`,
-                        labelZh: `${compareYear} 膠檢防擦布報廢`,
-                        getValue: (d) => d.data[compareYear]?.rispChRubber,
-                        formatter: formatNumber,
-                        year: compareYear,
                     }
                 ] : []),
                 ...(!['MX_RB', 'EX_RB', 'MX_CB', 'MX_CHM', 'CL_PLY', 'CL_FABRIC', 'CL_RB', 'CL_CH', 'CT_CH', 'CT_RB', 'CT_PLY', 'CT_BW', 'BD_RB', 'BD_PLY', 'BD_CH', 'BD_BW', 'RUBBER ALL', 'PLY ALL', 'RSIP_RB', 'RSIP_PLY', 'RSIP_CH', 'BW ALL', 'CH ALL', 'PLY/CH ALL'].includes(category) ? [
