@@ -96,7 +96,7 @@
             "EX_RB",
             "CT_RB", "CT_PLY", "CT_BW", "CT_CH",
             "BD_RB", "BD_PLY", "BD_BW", "BD_CH",
-            "RSIP_RB", "RSIP_PLY", "RSIP_CH"
+            "RSIP_RB", "RSIP_PLY", "RSIP_CH", "RSIP_BW"
         ];
 
         const categoryNamesZh = {
@@ -304,130 +304,137 @@
                             const month = monthStr.padStart(2, "0");
                             const year = yearStr;
                             
+                            const getVal = (idx) => {
+                                const val = parseFloat(row[idx]);
+                                return isNaN(val) ? null : val;
+                            };
+
                             let scrap = null;
                             let prodWeight = null;
                             
                             if (category === 'MX_RB') {
-                                scrap = parseFloat(row[1]) || null;
-                                prodWeight = parseFloat(row[2]) || null;
+                                scrap = getVal(1);
+                                prodWeight = getVal(2);
                             } else if (category === 'MX_CB') {
-                                scrap = parseFloat(row[3]) || null;
-                                prodWeight = parseFloat(row[2]) || null;
+                                scrap = getVal(3);
+                                prodWeight = getVal(2);
                             } else if (category === 'MX_CHM') {
-                                scrap = parseFloat(row[4]) || null;
-                                prodWeight = parseFloat(row[2]) || null;
+                                scrap = getVal(4);
+                                prodWeight = getVal(2);
                             } else if (category === 'EX_RB') {
-                                scrap = parseFloat(row[5]) || null;
-                                prodWeight = parseFloat(row[6]) || null;
+                                scrap = getVal(5);
+                                prodWeight = getVal(6);
                             } else if (category === 'CL_PLY') {
-                                scrap = parseFloat(row[7]) || null;
-                                prodWeight = parseFloat(row[8]) || null;
+                                scrap = getVal(7);
+                                prodWeight = getVal(8);
                             } else if (category === 'CL_FABRIC') {
-                                scrap = parseFloat(row[9]) || null;
-                                prodWeight = parseFloat(row[10]) || null;
+                                scrap = getVal(9);
+                                prodWeight = getVal(10);
                             } else if (category === 'CL_RB') {
-                                scrap = parseFloat(row[11]) || null;
-                                prodWeight = parseFloat(row[12]) || null;
+                                scrap = getVal(11);
+                                prodWeight = getVal(12);
                             } else if (category === 'CL_CH') {
-                                scrap = parseFloat(row[13]) || null;
-                                prodWeight = parseFloat(row[14]) || null;
+                                scrap = getVal(13);
+                                prodWeight = getVal(14);
                             } else if (category === 'CT_CH') {
-                                scrap = parseFloat(row[15]) || null;
-                                prodWeight = parseFloat(row[16]) || null;
+                                scrap = getVal(15);
+                                prodWeight = getVal(16);
                             } else if (category === 'CT_RB') {
-                                scrap = parseFloat(row[17]) || null;
-                                prodWeight = parseFloat(row[18]) || null;
+                                scrap = getVal(17);
+                                prodWeight = getVal(18);
                             } else if (category === 'CT_PLY') {
-                                scrap = parseFloat(row[19]) || null;
-                                prodWeight = parseFloat(row[20]) || null;
+                                scrap = getVal(19);
+                                prodWeight = getVal(20);
                             } else if (category === 'CT_BW') {
-                                scrap = parseFloat(row[21]) || null;
-                                prodWeight = parseFloat(row[22]) || null;
+                                scrap = getVal(21);
+                                prodWeight = getVal(22);
                             } else if (category === 'BD_RB') {
-                                scrap = parseFloat(row[23]) || null;
-                                prodWeight = parseFloat(row[24]) || null;
+                                scrap = getVal(23);
+                                prodWeight = getVal(24);
                             } else if (category === 'BD_PLY') {
-                                scrap = parseFloat(row[25]) || null;
-                                prodWeight = parseFloat(row[26]) || null;
+                                scrap = getVal(25);
+                                prodWeight = getVal(26);
                             } else if (category === 'BD_CH') {
-                                scrap = parseFloat(row[27]) || null;
-                                prodWeight = parseFloat(row[28]) || null;
+                                scrap = getVal(27);
+                                prodWeight = getVal(28);
                             } else if (category === 'BD_BW') {
-                                scrap = parseFloat(row[29]) || null;
-                                prodWeight = parseFloat(row[30]) || null;
+                                scrap = getVal(29);
+                                prodWeight = getVal(30);
                             } else if (category === 'RSIP_RB') {
-                                scrap = parseFloat(row[33]) || null;
-                                prodWeight = parseFloat(row[2]) || null;
+                                scrap = getVal(33);
+                                prodWeight = getVal(2);
                             } else if (category === 'RSIP_PLY') {
-                                scrap = parseFloat(row[35]) || null;
-                                prodWeight = parseFloat(row[26]) || null;
+                                scrap = getVal(35);
+                                prodWeight = getVal(26);
                             } else if (category === 'RSIP_CH') {
-                                scrap = parseFloat(row[37]) || null;
-                                prodWeight = parseFloat(row[28]) || null;
+                                scrap = getVal(37);
+                                prodWeight = getVal(28);
+                            } else if (category === 'RSIP_BW') {
+                                scrap = getVal(41);
+                                prodWeight = getVal(30);
                             } else if (category === 'RUBBER ALL') {
-                                const mxScrap = parseFloat(row[1]) || null;
-                                const exScrap = parseFloat(row[5]) || null;
-                                const clScrap = parseFloat(row[11]) || null;
-                                const ctScrap = parseFloat(row[17]) || null;
-                                const curingScrap = parseFloat(row[31]) || null;
-                                const rispScrap = parseFloat(row[33]) || null;
+                                const mxS = getVal(1);
+                                const exS = getVal(5);
+                                const clS = getVal(11);
+                                const ctS = getVal(17);
+                                const curS = getVal(31);
+                                const rispS = getVal(33);
                                 
-                                const hasAnyScrap = mxScrap !== null || exScrap !== null || clScrap !== null || ctScrap !== null || curingScrap !== null || rispScrap !== null;
-                                if (hasAnyScrap) {
-                                scrap = (mxScrap || 0) + (exScrap || 0) + (clScrap || 0) + (ctScrap || 0) + (curingScrap || 0) + (rispScrap || 0);
+                                if (mxS !== null || exS !== null || clS !== null || ctS !== null || curS !== null || rispS !== null) {
+                                    scrap = (mxS || 0) + (exS || 0) + (clS || 0) + (ctS || 0) + (curS || 0) + (rispS || 0);
                                 }
-                                prodWeight = parseFloat(row[2]) || null;
+                                prodWeight = getVal(2);
                             } else if (category === 'PLY ALL') {
-                                const clPlyScrap = parseFloat(row[7]) || null;
-                                const ctPlyScrap = parseFloat(row[19]) || null;
-                                const bdPlyScrap = parseFloat(row[25]) || null;
-                                const rispPlyScrap = parseFloat(row[35]) || null;
+                                const clP = getVal(7);
+                                const ctP = getVal(19);
+                                const bdP = getVal(25);
+                                const rispP = getVal(35);
+                                const exP = getVal(39);
                                 
-                                const hasAnyScrap = clPlyScrap !== null || ctPlyScrap !== null || bdPlyScrap !== null || rispPlyScrap !== null;
-                                if (hasAnyScrap) {
-                                scrap = (clPlyScrap || 0) + (ctPlyScrap || 0) + (bdPlyScrap || 0) + (rispPlyScrap || 0);
+                                if (clP !== null || ctP !== null || bdP !== null || rispP !== null || exP !== null) {
+                                    scrap = (clP || 0) + (ctP || 0) + (bdP || 0) + (rispP || 0) + (exP || 0);
                                 }
-                                prodWeight = parseFloat(row[8]) || null;
+                                prodWeight = getVal(8);
                             } else if (category === 'BW ALL') {
-                                const ctBwScrap = parseFloat(row[21]) || null;
-                                const bdBwScrap = parseFloat(row[29]) || null;
+                                const ctB = getVal(21);
+                                const bdB = getVal(29);
+                                const rsipB = getVal(41);
                                 
-                                const hasAnyScrap = ctBwScrap !== null || bdBwScrap !== null;
-                                if (hasAnyScrap) {
-                                scrap = (ctBwScrap || 0) + (bdBwScrap || 0);
+                                if (ctB !== null || bdB !== null || rsipB !== null) {
+                                    scrap = (ctB || 0) + (bdB || 0) + (rsipB || 0);
                                 }
-                                prodWeight = parseFloat(row[22]) || null;
+                                prodWeight = getVal(22);
                             } else if (category === 'CH ALL') {
-                                const clChScrap = parseFloat(row[13]) || null;
-                                const ctChScrap = parseFloat(row[15]) || null;
-                                const bdChScrap = parseFloat(row[27]) || null;
-                                const rsipChScrap = parseFloat(row[37]) || null;
+                                const clC = getVal(13);
+                                const ctC = getVal(15);
+                                const bdC = getVal(27);
+                                const rsipC = getVal(37);
                                 
-                                const hasAnyScrap = clChScrap !== null || ctChScrap !== null || bdChScrap !== null || rsipChScrap !== null;
-                                if (hasAnyScrap) {
-                                scrap = (clChScrap || 0) + (ctChScrap || 0) + (bdChScrap || 0) + (rsipChScrap || 0);
+                                if (clC !== null || ctC !== null || bdC !== null || rsipC !== null) {
+                                    scrap = (clC || 0) + (ctC || 0) + (bdC || 0) + (rsipC || 0);
                                 }
-                                prodWeight = parseFloat(row[16]) || null;
+                                prodWeight = getVal(16);
                             } else if (category === 'PLY/CH ALL') {
-                                const clPlyScrap = parseFloat(row[7]) || null;
-                                const ctPlyScrap = parseFloat(row[19]) || null;
-                                const bdPlyScrap = parseFloat(row[25]) || null;
-                                const rispPlyScrap = parseFloat(row[35]) || null;
+                                const clP = getVal(7);
+                                const ctP = getVal(19);
+                                const bdP = getVal(25);
+                                const rispP = getVal(35);
+                                const exP = getVal(39);
                                 
-                                const clChScrap = parseFloat(row[13]) || null;
-                                const ctChScrap = parseFloat(row[15]) || null;
-                                const bdChScrap = parseFloat(row[27]) || null;
-                                const rsipChScrap = parseFloat(row[37]) || null;
+                                const clC = getVal(13);
+                                const ctC = getVal(15);
+                                const bdC = getVal(27);
+                                const rsipC = getVal(37);
                                 
-                                const hasAnyScrap = clPlyScrap !== null || ctPlyScrap !== null || bdPlyScrap !== null || rispPlyScrap !== null || clChScrap !== null || ctChScrap !== null || bdChScrap !== null || rsipChScrap !== null;
-                                
-                                if (hasAnyScrap) {
-                                    scrap = (clPlyScrap || 0) + (ctPlyScrap || 0) + (bdPlyScrap || 0) + (rispPlyScrap || 0) + (clChScrap || 0) + (ctChScrap || 0) + (bdChScrap || 0) + (rsipChScrap || 0);
+                                if (clP !== null || ctP !== null || bdP !== null || rispP !== null || exP !== null || clC !== null || ctC !== null || bdC !== null || rsipC !== null) {
+                                    scrap = (clP || 0) + (ctP || 0) + (bdP || 0) + (rispP || 0) + (exP || 0) + (clC || 0) + (ctC || 0) + (bdC || 0) + (rsipC || 0);
                                 }
                                 
-                                const plyProd = parseFloat(row[8]) || 0;
-                                const chProd = parseFloat(row[16]) || 0;
-                                prodWeight = (plyProd + chProd) || null;
+                                const pProd = getVal(8);
+                                const cProd = getVal(16);
+                                if (pProd !== null || cProd !== null) {
+                                    prodWeight = (pProd || 0) + (cProd || 0);
+                                }
                             }
 
                             if (!monthlyDataMap[month]) {
@@ -436,34 +443,35 @@
                             
                             monthlyDataMap[month][year] = {
                                 prodWeight: prodWeight,
-                                mxRubber: category === 'MX_RB' ? scrap : (category === 'RUBBER ALL' ? (parseFloat(row[1]) || null) : null),
-                                mxCbRubber: category === 'MX_CB' ? scrap : null,
-                                mxChmRubber: category === 'MX_CHM' ? scrap : null,
-                                exRubber: category === 'EX_RB' ? scrap : (category === 'RUBBER ALL' ? (parseFloat(row[5]) || null) : null),
-                                clPlyRubber: category === 'CL_PLY' ? scrap : (['PLY ALL', 'PLY/CH ALL'].includes(category) ? (parseFloat(row[7]) || null) : null),
-                                clFabricRubber: category === 'CL_FABRIC' ? scrap : null,
-                                clRbRubber: category === 'CL_RB' ? scrap : null,
-                                clChRubber: category === 'CL_CH' ? scrap : (['CH ALL', 'PLY/CH ALL'].includes(category) ? (parseFloat(row[13]) || null) : null),
-                                ctChRubber: category === 'CT_CH' ? scrap : (['CH ALL', 'PLY/CH ALL'].includes(category) ? (parseFloat(row[15]) || null) : null),
-                                ctRbRubber: category === 'CT_RB' ? scrap : null,
-                                ctPlyRubber: category === 'CT_PLY' ? scrap : (['PLY ALL', 'PLY/CH ALL'].includes(category) ? (parseFloat(row[19]) || null) : null),
-                                ctBwRubber: category === 'CT_BW' ? scrap : (category === 'BW ALL' ? (parseFloat(row[21]) || null) : null),
-                                bdRbRubber: category === 'BD_RB' ? scrap : null,
-                                bdPlyRubber: category === 'BD_PLY' ? scrap : (['PLY ALL', 'PLY/CH ALL'].includes(category) ? (parseFloat(row[25]) || null) : null),
-                                bdChRubber: category === 'BD_CH' ? scrap : (['CH ALL', 'PLY/CH ALL'].includes(category) ? (parseFloat(row[27]) || null) : null),
-                                bdBwRubber: category === 'BD_BW' ? scrap : (category === 'BW ALL' ? (parseFloat(row[29]) || null) : null),
-                                ctRubber: category === 'RUBBER ALL' ? (parseFloat(row[17]) || null) : null,
-                                clRubber: category === 'RUBBER ALL' ? (parseFloat(row[11]) || null) : null,
-                                curingRubber: category === 'RUBBER ALL' ? (parseFloat(row[31]) || null) : null,
-                                rispRubber: category === 'RUBBER ALL' ? (parseFloat(row[33]) || null) : (category === 'RSIP_RB' ? scrap : null),
-                                exPlyRubber: null,
-                                rispPlyRubber: ['PLY ALL', 'PLY/CH ALL'].includes(category) ? (parseFloat(row[35]) || null) : (category === 'RSIP_PLY' ? scrap : null),
-                                rispChRubber: category === 'RSIP_CH' ? scrap : (['CH ALL', 'PLY/CH ALL'].includes(category) ? (parseFloat(row[37]) || null) : null),
-                                rsipBwRubber: null,
+                                mxRubber: getVal(1),
+                                mxCbRubber: getVal(3),
+                                mxChmRubber: getVal(4),
+                                exRubber: getVal(5),
+                                clPlyRubber: getVal(7),
+                                clFabricRubber: getVal(9),
+                                clRbRubber: getVal(11),
+                                clChRubber: getVal(13),
+                                ctChRubber: getVal(15),
+                                ctRbRubber: getVal(17),
+                                ctPlyRubber: getVal(19),
+                                ctBwRubber: getVal(21),
+                                bdRbRubber: getVal(23),
+                                bdPlyRubber: getVal(25),
+                                bdChRubber: getVal(27),
+                                bdBwRubber: getVal(29),
+                                curingRubber: getVal(31),
+                                rispRubber: getVal(33),
+                                rispPlyRubber: getVal(35),
+                                rispChRubber: getVal(37),
+                                exPlyRubber: getVal(39),
+                                rsipBwRubber: getVal(41),
                                 totalScrapWeight: scrap,
                                 totalScrapRatio: (scrap !== null && prodWeight !== null && prodWeight > 0) 
                                 ? (scrap / prodWeight) * 100 
                                 : null,
+                                // Store sub-totals for PLY/CH ALL
+                                totalPlyScrapWeight: (getVal(7) || 0) + (getVal(19) || 0) + (getVal(25) || 0) + (getVal(35) || 0) + (getVal(39) || 0),
+                                totalChScrapWeight: (getVal(13) || 0) + (getVal(15) || 0) + (getVal(27) || 0) + (getVal(37) || 0),
                             };
                         });
 
@@ -727,12 +735,22 @@
                 const translationDict = {
                     // Headers
                     "Date": "日期",
+                    "MONTH": "月份",
+                    "MONTH 月": "月份",
+                    "Material code": "料號",
+                    "Material name": "材料名稱",
+                    "Reasons for scrapping": "報廢原因",
+                    "Sub Reasons for scrapping": "報廢原因",
+                    "Qty.": "公斤數",
+                    "Section": "部門",
+                    "Item": "項目",
                     "TYPE": "類型",
                     "easy": "分類",
                     "Reason": "原因",
                     "Weight": "重量",
                     "Scrap": "報廢",
                     "Total": "總計",
+                    "總計": "總計",
                     // Sections/Types
                     "MX": "混練",
                     "EX": "押出",
@@ -754,8 +772,11 @@
                     "Details for": "詳細數據",
                     "No detailed data found.": "找不到詳細數據。",
                     "Failed to fetch detail data. Please check the console for errors.": "獲取詳細數據失敗。請檢查控制台以獲取錯誤信息。",
-                    // Add more reasons or other terms here as needed
-                    // "Example Reason": "範例原因",
+                    // Common values
+                    "Machine NG": "機器不良",
+                    "Rubber Dead": "死膠",
+                    "Mixing": "混練",
+                    "OTHER": "其他",
                 };
 
                 const translate = (text) => {
@@ -786,7 +807,9 @@
                 
                 // Handle special cases like "2024_TOTAL"
                 if (section === "TOTAL") {
-                    if (category === 'RUBBER ALL') scrapType = 'RUBBER';
+                    if (labelEn.includes("PLY SCRAP")) scrapType = 'PLY';
+                    else if (labelEn.includes("CHAFERS SCRAP")) scrapType = 'CHAFER';
+                    else if (category === 'RUBBER ALL') scrapType = 'RUBBER';
                     else if (category === 'PLY ALL') scrapType = 'PLY';
                     else if (category === 'BW ALL') scrapType = 'BW';
                     else if (category === 'CH ALL') scrapType = 'CHAFER';
@@ -1507,6 +1530,21 @@
                         year: primaryYear,
                     },
                     {
+                        labelEn: `${primaryYear}_TOTAL PLY SCRAP Weight`,
+                        labelZh: `${primaryYear} 簾布總報廢重量`,
+                        getValue: (d) => d.data[primaryYear]?.totalPlyScrapWeight,
+                        formatter: formatNumber,
+                        className: "bg-blue-50 font-semibold",
+                        year: primaryYear,
+                    },
+                    {
+                        labelEn: `${compareYear}_TOTAL PLY SCRAP Weight`,
+                        labelZh: `${compareYear} 簾布總報廢重量`,
+                        getValue: (d) => d.data[compareYear]?.totalPlyScrapWeight,
+                        formatter: formatNumber,
+                        year: compareYear,
+                    },
+                    {
                         labelEn: `${primaryYear}_CL CH`,
                         labelZh: `${primaryYear} 上膠防擦布報廢`,
                         getValue: (d) => d.data[primaryYear]?.clChRubber,
@@ -1533,9 +1571,24 @@
                         getValue: (d) => d.data[primaryYear]?.rispChRubber,
                         formatter: formatNumber,
                         year: primaryYear,
-                    }
+                    },
+                    {
+                        labelEn: `${primaryYear}_TOTAL CHAFERS SCRAP Weight`,
+                        labelZh: `${primaryYear} 防擦布總報廢重量`,
+                        getValue: (d) => d.data[primaryYear]?.totalChScrapWeight,
+                        formatter: formatNumber,
+                        className: "bg-blue-50 font-semibold",
+                        year: primaryYear,
+                    },
+                    {
+                        labelEn: `${compareYear}_TOTAL CHAFERS SCRAP Weight`,
+                        labelZh: `${compareYear} 防擦布總報廢重量`,
+                        getValue: (d) => d.data[compareYear]?.totalChScrapWeight,
+                        formatter: formatNumber,
+                        year: compareYear,
+                    },
                 ] : []),
-                ...(!['MX_RB', 'EX_RB', 'MX_CB', 'MX_CHM', 'CL_PLY', 'CL_FABRIC', 'CL_RB', 'CL_CH', 'CT_CH', 'CT_RB', 'CT_PLY', 'CT_BW', 'BD_RB', 'BD_PLY', 'BD_CH', 'BD_BW', 'RUBBER ALL', 'PLY ALL', 'RSIP_RB', 'RSIP_PLY', 'RSIP_CH', 'BW ALL', 'CH ALL', 'PLY/CH ALL'].includes(category) ? [
+                ...(!['MX_RB', 'EX_RB', 'MX_CB', 'MX_CHM', 'CL_PLY', 'CL_FABRIC', 'CL_RB', 'CL_CH', 'CT_CH', 'CT_RB', 'CT_PLY', 'CT_BW', 'BD_RB', 'BD_PLY', 'BD_CH', 'BD_BW', 'RUBBER ALL', 'PLY ALL', 'RSIP_RB', 'RSIP_PLY', 'RSIP_CH', 'RSIP_BW', 'BW ALL', 'CH ALL', 'PLY/CH ALL'].includes(category) ? [
                     {
                         labelEn: `${primaryYear}_MX RUBBER`,
                         labelZh: `${primaryYear} 混練膠料報廢`,
@@ -1742,7 +1795,7 @@
             };
 
             useEffect(() => {
-                if (['MX_RB', 'EX_RB', 'MX_CB', 'MX_CHM', 'CL_PLY', 'CL_FABRIC', 'CL_RB', 'CL_CH', 'CT_CH', 'CT_RB', 'CT_PLY', 'CT_BW', 'BD_RB', 'BD_PLY', 'BD_CH', 'BD_BW', 'RUBBER ALL', 'PLY ALL', 'RSIP_RB', 'RSIP_PLY', 'RSIP_CH', 'BW ALL', 'CH ALL'].includes(category)) {
+                if (categories.includes(category)) {
                     setLoading(true);
                     fetchScrapData(category)
                         .then(data => {
