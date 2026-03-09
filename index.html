@@ -450,9 +450,11 @@
                                 clPlyRubber: getVal(7),
                                 clFabricRubber: getVal(9),
                                 clRbRubber: getVal(11),
+                                clRubber: getVal(11),
                                 clChRubber: getVal(13),
                                 ctChRubber: getVal(15),
                                 ctRbRubber: getVal(17),
+                                ctRubber: getVal(17),
                                 ctPlyRubber: getVal(19),
                                 ctBwRubber: getVal(21),
                                 bdRbRubber: getVal(23),
@@ -501,7 +503,8 @@
             chartType,
             data,
             pointStyles,
-            onPointStyleChange
+            onPointStyleChange,
+            isCapturing
         }) => {
             const t = translations[lang];
 
@@ -663,7 +666,7 @@
                                 <span className="text-white">{compareYear}</span>
                             </div>
                         </div>
-                        <ResponsiveContainer width="100%" height="100%">
+                        <ResponsiveContainer width="100%" height="100%" key={isCapturing ? 'capturing' : 'normal'}>
                             <LineChart
                                 data={chartData}
                                 margin={{ top: 40, right: 30, left: 20, bottom: 5 }}
@@ -682,6 +685,7 @@
                                     activeDot={{ r: 6 }} 
                                     connectNulls 
                                     label={<CustomLabelCompare />} 
+                                    isAnimationActive={!isCapturing}
                                 />
                                 <Line 
                                     type="monotone" 
@@ -693,6 +697,7 @@
                                     activeDot={{ r: 7 }} 
                                     connectNulls 
                                     label={<CustomLabelPrimary />} 
+                                    isAnimationActive={!isCapturing}
                                 />
                             </LineChart>
                         </ResponsiveContainer>
@@ -727,20 +732,27 @@
                 });
             };
 
-            const fetchAndShowDetails = async (labelEn, monthNum) => {
+            const fetchAndShowDetails = async (labelEn, labelZh, monthNum) => {
                 let year = "";
                 let section = "";
                 let scrapType = "";
+                
+                const currentLabel = lang === 'zh' ? labelZh : labelEn;
                 
                 const translationDict = {
                     // Headers
                     "Date": "日期",
                     "MONTH": "月份",
                     "MONTH 月": "月份",
+                    "料號 Material code": "料號",
+                    "材料名稱 Material name": "材料名稱",
+                    "報廢原因 Reasons for scrapping": "報廢原因",
+                    "報廢原因 Sub Reasons for scrapping": "報廢原因 (子項)",
+                    "公斤數 Qty.": "公斤數",
                     "Material code": "料號",
                     "Material name": "材料名稱",
                     "Reasons for scrapping": "報廢原因",
-                    "Sub Reasons for scrapping": "報廢原因",
+                    "Sub Reasons for scrapping": "報廢原因 (子項)",
                     "Qty.": "公斤數",
                     "Section": "部門",
                     "Item": "項目",
@@ -763,8 +775,49 @@
                     "PLY": "簾布",
                     "BW": "鋼絲",
                     "CHAFER": "防擦布",
+                    "CHAFERS": "防擦布",
+                    "CH": "防擦布",
                     "CHEMICAL": "藥品",
                     "CARBON BLACK": "碳煙",
+                    "CUTTING": "裁斷",
+                    "BUILDING": "成型",
+                    "CURING": "加硫",
+                    "EXTRUDING": "押出",
+                    "CALENDERING": "上膠",
+                    "MIXING": "混練",
+                    // Reasons & Sub-reasons
+                    "PLY PROCESS SCRAP": "簾布製程報廢",
+                    "CH PROCESS SCRAP": "防擦布製程報廢",
+                    "PLY CHANGE": "更換簾布",
+                    "SPEC CHANGE": "更換規格",
+                    "SETUP WASTE": "調機損耗",
+                    "CH CHANGE": "更換防擦布",
+                    "PROCESS SCRAP": "製程報廢",
+                    "MATERIAL NG": "材料不良",
+                    "OPERATOR ERROR": "操作錯誤",
+                    "MACHINE ERROR": "機器錯誤",
+                    "JOINT OPEN": "接頭開口",
+                    "WIDTH NG": "寬度不良",
+                    "THICKNESS NG": "厚度不良",
+                    "TENSION NG": "張力不良",
+                    "WRINKLE": "皺褶",
+                    "CONTAMINATION": "污染",
+                    "DAMAGED": "損壞",
+                    "EXPIRED": "過期",
+                    "SCRAP": "報廢",
+                    "REJECT": "不良",
+                    "SAMPLE": "樣品",
+                    "TRIAL": "測試",
+                    "QUALITY ISSUE": "品質問題",
+                    "EQUIPMENT FAILURE": "設備故障",
+                    "POWER OUTAGE": "停電",
+                    "MAINTENANCE": "維修",
+                    "CLEANING": "清潔",
+                    "ADJUSTMENT": "調整",
+                    "STARTUP": "啟動",
+                    "SHUTDOWN": "關閉",
+                    "WASTE": "損耗",
+                    "OTHER": "其他",
                     // UI Elements
                     "Filter...": "過濾...",
                     "Loading detailed data for": "正在載入詳細數據",
@@ -776,7 +829,6 @@
                     "Machine NG": "機器不良",
                     "Rubber Dead": "死膠",
                     "Mixing": "混練",
-                    "OTHER": "其他",
                 };
 
                 const translate = (text) => {
@@ -955,7 +1007,7 @@
                         <!DOCTYPE html>
                         <html>
                         <head>
-                            <title>${translate('Details for')} ${labelEn} - ${translate('Month')} ${monthStr}</title>
+                            <title>${translate('Details for')} ${currentLabel} - ${translate('Month')} ${monthStr}</title>
                             <style>
                                 body { font-family: 'Inter', sans-serif; padding: 20px; background-color: #f9fafb; color: #111827; }
                                 h3 { margin-top: 0; margin-bottom: 20px; font-size: 20px; font-weight: 600; }
@@ -973,7 +1025,7 @@
                         </head>
                         <body>
                             <div class="container">
-                                <h3>${translate('Details for')} ${labelEn} - ${translate('Month')} ${monthStr}</h3>
+                                <h3>${translate('Details for')} ${currentLabel} - ${translate('Month')} ${monthStr}</h3>
                                 <div id="content"></div>
                             </div>
                             <script>
@@ -1667,9 +1719,12 @@
             return (
                 <div className={`w-full ${isCapturing ? 'h-auto overflow-visible' : 'h-full overflow-auto'}`}>
                     <table className="w-full text-xs sm:text-sm border-collapse table-fixed">
-                        <thead className="sticky top-0 z-10">
+                        <thead className={isCapturing ? "" : "sticky top-0 z-10"}>
                             <tr className="bg-[#90EE90] shadow-sm">
-                                <th className="border border-gray-300 p-1 sm:p-3 text-left font-bold text-sm sm:text-lg w-[30%] sm:w-[250px] sticky left-0 bg-[#90EE90] z-20">
+                                <th className={cn(
+                                    "border border-gray-300 p-1 sm:p-3 text-left font-bold text-sm sm:text-lg w-[30%] sm:w-[250px] bg-[#90EE90] z-20",
+                                    isCapturing ? "" : "sticky left-0"
+                                )}>
                                     {t.months}
                                 </th>
                                 {months.map((month) => (
@@ -1689,9 +1744,10 @@
                                     <tr key={idx} className={`transition-colors ${isCompareRow ? 'bg-orange-50 hover:bg-orange-100' : 'bg-white hover:bg-gray-50'}`}>
                                         <td
                                             className={cn(
-                                                "border border-gray-300 p-1 sm:p-3 whitespace-pre-line text-[10px] sm:text-xs sticky left-0 z-10 break-words",
+                                                "border border-gray-300 p-1 sm:p-3 whitespace-pre-line text-[10px] sm:text-xs break-words",
                                                 row.className,
-                                                isCompareRow ? 'bg-orange-50' : 'bg-white'
+                                                isCompareRow ? 'bg-orange-50' : 'bg-white',
+                                                isCapturing ? "" : "sticky left-0 z-10"
                                             )}
                                         >
                                             {lang === 'en' ? row.labelEn : row.labelZh}
@@ -1713,7 +1769,7 @@
                                                     )}
                                                     onClick={(e) => {
                                                         handleCellClick(pointId);
-                                                        fetchAndShowDetails(row.labelEn, d.month);
+                                                        fetchAndShowDetails(row.labelEn, row.labelZh, d.month);
                                                     }}
                                                 >
                                                     {row.formatter(cellValue)}
@@ -1759,7 +1815,7 @@
                 
                 try {
                     window.scrollTo(0, 0);
-                    await new Promise(resolve => setTimeout(resolve, 300));
+                    await new Promise(resolve => setTimeout(resolve, 600));
                     
                     const canvas = await html2canvas(captureRef.current, {
                         scale: 2,
@@ -1767,8 +1823,7 @@
                         logging: false,
                         useCORS: true,
                         allowTaint: true,
-                        windowWidth: captureRef.current.scrollWidth,
-                        windowHeight: captureRef.current.scrollHeight,
+                        windowWidth: 1280,
                     });
                     
                     canvas.toBlob(async (blob) => {
@@ -1900,7 +1955,7 @@
 
                     <div 
                         ref={captureRef}
-                        className={`flex-1 p-4 lg:p-6 max-w-[1920px] mx-auto w-full flex flex-col gap-6 ${isCapturing ? 'h-auto overflow-visible' : ''}`}
+                        className={`flex-1 p-4 lg:p-6 max-w-[1920px] mx-auto w-full flex flex-col gap-6 ${isCapturing ? 'h-auto overflow-visible !w-[1280px] !p-6' : ''}`}
                     >
                         <Chart 
                             lang={lang} 
@@ -1911,6 +1966,7 @@
                             data={chartData}
                             pointStyles={pointStyles}
                             onPointStyleChange={setPointStyles}
+                            isCapturing={isCapturing}
                         />
                         
                         <div className={`w-full bg-white rounded-2xl shadow-sm border-2 border-gray-400 flex-col relative ${isCapturing ? 'flex-none h-auto overflow-visible' : 'flex-1 overflow-hidden flex'}`}>
