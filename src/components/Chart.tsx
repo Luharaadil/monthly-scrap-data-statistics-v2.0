@@ -118,7 +118,7 @@ export function Chart({
       <div className="p-4 lg:p-6 border-b border-gray-100 bg-gradient-to-r from-[#7bc97b] to-[#90EE90] flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
         <div>
           <h1 className="text-2xl lg:text-3xl font-bold text-gray-900 tracking-tight">
-            {compareYear} / {primaryYear} {categoryNamesZh[category] || category}{chartType === 'ratio' ? '報廢率' : '報廢重量'}
+            {compareYear} / {primaryYear} {categoryNamesZh[category] || category}{chartType === 'ratio' ? '報廢率 (CSV)' : '報廢重量'}
           </h1>
           <p className="text-gray-800 mt-1 font-medium text-sm lg:text-base">
             {t.subtitle}
@@ -162,7 +162,7 @@ export function Chart({
               onChange={(e) => onChartTypeChange(e.target.value as 'ratio' | 'weight')}
               className="bg-white border border-gray-300 text-gray-900 text-sm rounded-md focus:ring-blue-500 focus:border-blue-500 block p-2 font-medium shadow-sm outline-none"
             >
-              <option value="ratio">{lang === 'zh' ? '報廢率 (%)' : 'Scrap Ratio (%)'}</option>
+              <option value="ratio">{lang === 'zh' ? '報廢率 (CSV) (%)' : 'Scrap Ratio (%)'}</option>
               <option value="weight">{lang === 'zh' ? '報廢重量 (KG)' : 'Scrap Weight (KG)'}</option>
             </select>
           </div>

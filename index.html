@@ -81,6 +81,15 @@
                 language: "Language",
                 primaryYear: "Primary Year",
                 compareYear: "Compare Year",
+                resetDefaults: "Reset Defaults",
+                clearCache: "Clear Cache & Update",
+                fontSize: "Font Size",
+                adjustFont: "Adjust Font",
+                done: "Done",
+                cellsSelected: "cells selected",
+                clearSelection: "Clear Selection",
+                lock: "Lock Position",
+                unlock: "Unlock Position",
             },
             zh: {
                 title: "膠料總報廢率",
@@ -92,17 +101,27 @@
                 language: "語言",
                 primaryYear: "主要年份",
                 compareYear: "比較年份",
+                resetDefaults: "恢復預設",
+                clearCache: "清除暫存並更新",
+                fontSize: "字體大小",
+                adjustFont: "調整字體",
+                done: "完成調整",
+                cellsSelected: "個格位已選擇",
+                clearSelection: "清除選擇",
+                lock: "鎖定位置",
+                unlock: "解鎖位置",
             }
         };
 
         const categories = [
-            "RUBBER ALL", "PLY ALL", "BW ALL", "CH ALL", "PLY/CH ALL",
+            "RUBBER ALL", "PLY ALL", "BW ALL", "CH ALL", "PLY/CH ALL", "CT_CL PLY/CH ALL",
             "MX_RB", "MX_CB", "MX_CHM",
             "CL_RB", "CL_PLY", "CL_FABRIC", "CL_CH",
             "EX_RB",
             "CT_RB", "CT_PLY", "CT_BW", "CT_CH",
             "BD_RB", "BD_PLY", "BD_BW", "BD_CH",
-            "RSIP_RB", "RSIP_PLY", "RSIP_CH", "RSIP_BW"
+            "CUR_RB",
+            "RSIP_RB", "RSIP_PLY", "RSIP_CH"
         ];
 
         const categoryNamesZh = {
@@ -111,6 +130,7 @@
             "BW ALL": "鋼絲總報廢",
             "CH ALL": "防擦布總報廢",
             "PLY/CH ALL": "簾布/防擦布總報廢",
+            "CT_CL PLY/CH ALL": "裁斷/上膠 簾布/防擦布總報廢",
             "MX_RB": "混練膠料報廢",
             "MX_CB": "混練碳煙報廢",
             "MX_CHM": "混練藥品報廢",
@@ -127,36 +147,39 @@
             "BD_PLY": "成型簾布報廢",
             "BD_BW": "成型鋼絲報廢",
             "BD_CH": "成型防擦布報廢",
+            "CUR_RB": "加硫膠料報廢",
             "RSIP_RB": "膠檢膠料報廢",
             "RSIP_PLY": "膠檢簾布報廢",
             "RSIP_CH": "膠檢防擦布報廢"
         };
 
         const categoryNamesEn = {
-            "RUBBER ALL": "TOTAL RUBBER SCRAP",
-            "PLY ALL": "TOTAL PLY SCRAP",
-            "BW ALL": "TOTAL BEAD WIRE SCRAP",
-            "CH ALL": "TOTAL CHAFERS SCRAP",
-            "PLY/CH ALL": "TOTAL PLY/CHAFERS SCRAP",
-            "MX_RB": "MIXING RUBBER SCRAP",
-            "MX_CB": "MIXING CARBON BLACK SCRAP",
-            "MX_CHM": "MIXING CHEMICAL SCRAP",
-            "CL_RB": "CALENDERING RUBBER SCRAP",
-            "CL_PLY": "CALENDERING PLY SCRAP",
-            "CL_FABRIC": "CALENDERING FABRIC SCRAP",
-            "CL_CH": "CALENDERING CHAFERS SCRAP",
-            "EX_RB": "EXTRUDING RUBBER SCRAP",
-            "CT_RB": "CUTTING RUBBER SCRAP",
-            "CT_PLY": "CUTTING PLY SCRAP",
-            "CT_BW": "CUTTING BEAD WIRE SCRAP",
-            "CT_CH": "CUTTING CHAFERS SCRAP",
-            "BD_RB": "BUILDING RUBBER SCRAP",
-            "BD_PLY": "BUILDING PLY SCRAP",
-            "BD_BW": "BUILDING BEAD WIRE SCRAP",
-            "BD_CH": "BUILDING CHAFERS SCRAP",
-            "RSIP_RB": "RSIP RUBBER SCRAP",
-            "RSIP_PLY": "RSIP PLY SCRAP",
-            "RSIP_CH": "RSIP CHAFERS SCRAP"
+            "RUBBER ALL": "TOTAL RUBBER",
+            "PLY ALL": "TOTAL PLY",
+            "BW ALL": "TOTAL BEAD WIRE",
+            "CH ALL": "TOTAL CHAFERS",
+            "PLY/CH ALL": "TOTAL PLY/CHAFERS",
+            "CT_CL PLY/CH ALL": "TOTAL CT/CL PLY/CHAFERS",
+            "MX_RB": "MIXING RUBBER",
+            "MX_CB": "MIXING CARBON BLACK",
+            "MX_CHM": "MIXING CHEMICAL",
+            "CL_RB": "CALENDERING RUBBER",
+            "CL_PLY": "CALENDERING PLY",
+            "CL_FABRIC": "CALENDERING FABRIC",
+            "CL_CH": "CALENDERING CHAFERS",
+            "EX_RB": "EXTRUDING RUBBER",
+            "CT_RB": "CUTTING RUBBER",
+            "CT_PLY": "CUTTING PLY",
+            "CT_BW": "CUTTING BEAD WIRE",
+            "CT_CH": "CUTTING CHAFERS",
+            "BD_RB": "BUILDING RUBBER",
+            "BD_PLY": "BUILDING PLY",
+            "BD_BW": "BUILDING BEAD WIRE",
+            "BD_CH": "BUILDING CHAFERS",
+            "CUR_RB": "CUR RUBBER",
+            "RSIP_RB": "RSIP RUBBER",
+            "RSIP_PLY": "RSIP PLY",
+            "RSIP_CH": "RSIP CHAFERS"
         };
 
         // --- Data ---
@@ -284,241 +307,412 @@
 ];
 
         // --- Data Service ---
-        const CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSUYQGdhyZVe--2uuwb4dgfi44pBg_Rk6yj7zdlNmWg0F_rAJg2z2V7gkBWHsGznsg-VsEWAjNeUG5q/pub?gid=0&single=true&output=csv";
+        const CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSUYQGdhyZVe--2uuwb4dgfi44pBg_Rk6yj7zdlNmWg0F_rAJg2z2V7gkBWHsGznsg-VsEWAjNeUG5q/pub?output=csv";
+
+        let cachedDataPromise = null;
+        let isDataCached = false;
 
         async function fetchScrapData(category) {
             const cacheBuster = new Date().getTime();
-            const urlWithCache = `${CSV_URL}&t=${cacheBuster}`;
+            const CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSUYQGdhyZVe--2uuwb4dgfi44pBg_Rk6yj7zdlNmWg0F_rAJg2z2V7gkBWHsGznsg-VsEWAjNeUG5q/pub?output=csv";
+            const RAW_CSV_URL = "https://script.google.com/macros/s/AKfycbwgP4jhdt0rom8RB3r3yvc42Xg-kgB4FgJ2DQTVOFHTir1g6mVFjCAMW5BB0dpbFbSARg/exec?action=getRawScrap";
+            const PROD_URL = "https://script.google.com/macros/s/AKfycbwgP4jhdt0rom8RB3r3yvc42Xg-kgB4FgJ2DQTVOFHTir1g6mVFjCAMW5BB0dpbFbSARg/exec?action=getData&startDate=2020-01-01&endDate=2030-12-31";
             
-            return new Promise((resolve, reject) => {
-                Papa.parse(urlWithCache, {
-                    download: true,
-                    header: false,
-                    complete: (results) => {
-                        const rows = results.data;
-                        const dataRows = rows.slice(2);
-                        const monthlyDataMap = {};
-                        
-                        for (let i = 1; i <= 12; i++) {
-                            const monthStr = i.toString().padStart(2, "0");
-                            monthlyDataMap[monthStr] = {};
+            try {
+                if (!cachedDataPromise) {
+                    cachedDataPromise = Promise.all([
+                        new Promise((resolve, reject) => {
+                            Papa.parse(`${CSV_URL}&t=${cacheBuster}`, { download: true, header: false, complete: resolve, error: reject });
+                        }),
+                        fetch(`${RAW_CSV_URL}&t=${cacheBuster}`).then(async (res) => {
+                            const text = await res.text();
+                            try {
+                                const jsonData = JSON.parse(text);
+                                if (jsonData.error) throw new Error(jsonData.error);
+                                // If it's a JSON array of arrays (or objects), wrap it so it matches PapaParse output format
+                                return { data: Array.isArray(jsonData) ? jsonData : (jsonData.data || jsonData.items || Object.values(jsonData)) };
+                            } catch (e) {
+                                return new Promise((resolve, reject) => {
+                                    // Fallback to fetching directly from the spreadsheet CSV export if App Script returns error/invalid format
+                                    const SHEET_EXPORT_URL = "https://docs.google.com/spreadsheets/d/1GHwq2tHt0ZDwuGHfTZSov6b2JgfURUKt7c8WLZWPGKs/export?format=csv&gid=359852687";
+                                    Papa.parse(`${SHEET_EXPORT_URL}&t=${cacheBuster}`, { 
+                                        download: true, 
+                                        header: false, 
+                                        complete: resolve, 
+                                        error: (err) => {
+                                            // If spreadsheet export also fails (e.g. not public), fallback to parsing the raw text we first received
+                                            Papa.parse(text, { header: false, complete: resolve, error: reject });
+                                        }
+                                    });
+                                });
+                            }
+                        }),
+                        fetch(`${PROD_URL}&t=${cacheBuster}`).then(r => r.json()).catch(() => ({ summaries: [] })),
+                        new Promise((resolve, reject) => {
+                            const newCsvUrl = "https://docs.google.com/spreadsheets/d/1GHwq2tHt0ZDwuGHfTZSov6b2JgfURUKt7c8WLZWPGKs/export?format=csv&gid=805147683";
+                            Papa.parse(`${newCsvUrl}&t=${cacheBuster}`, { download: true, header: false, complete: resolve, error: reject });
+                        }).catch(() => null)
+                    ]).then(res => {
+                        isDataCached = true;
+                        return res;
+                    });
+                }
+                const [oldData, newData, prodDataReq, newCsvData] = await cachedDataPromise;
+
+                const monthlyDataMap = {};
+                for (let i = 1; i <= 12; i++) {
+                    const monthStr = i.toString().padStart(2, "0");
+                    monthlyDataMap[monthStr] = {};
+                }
+
+                const oldRows = oldData.data ? oldData.data.slice(2) : [];
+                oldRows.forEach((row) => {
+                    if (!row[0] || !row[0].includes("/")) return;
+                    const dateParts = row[0].split("/");
+                    let month, year;
+                    if (dateParts.length === 2) {
+                        month = dateParts[0].padStart(2, "0");
+                        year = dateParts[1];
+                    } else if (dateParts.length === 3) {
+                        const d = new Date(row[0]);
+                        if (!isNaN(d.getTime())) {
+                            month = (d.getMonth() + 1).toString().padStart(2, "0");
+                            year = d.getFullYear().toString();
+                        } else {
+                            month = dateParts[1].padStart(2, "0");
+                            year = dateParts[2];
+                        }
+                    }
+                    if (!month || !year) return;
+
+                    const getVal = (idx) => {
+                        const val = parseFloat(row[idx]);
+                        return isNaN(val) ? null : val;
+                    };
+
+                    let prodWeight = null;
+                    if (category === 'MX_RB' || category === 'MX_CB' || category === 'MX_CHM' || category === 'RUBBER ALL') prodWeight = getVal(2);
+                    else if (category === 'EX_RB') prodWeight = getVal(6);
+                    else if (category === 'CL_PLY' || category === 'PLY ALL') prodWeight = getVal(8);
+                    else if (category === 'CL_FABRIC') prodWeight = getVal(10);
+                    else if (category === 'CL_RB') prodWeight = getVal(12);
+                    else if (category === 'CL_CH') prodWeight = getVal(14);
+                    else if (category === 'CT_CH' || category === 'CH ALL') prodWeight = getVal(16);
+                    else if (category === 'CT_RB') prodWeight = getVal(18);
+                    else if (category === 'CT_PLY') prodWeight = getVal(20);
+                    else if (category === 'CT_BW' || category === 'BW ALL') prodWeight = getVal(22);
+                    else if (category === 'BD_RB') prodWeight = getVal(24);
+                    else if (category === 'BD_PLY') prodWeight = getVal(26);
+                    else if (category === 'BD_CH') prodWeight = getVal(28);
+                    else if (category === 'BD_BW') prodWeight = getVal(30);
+                    else if (category === 'CUR_RB') prodWeight = getVal(32);
+                    else if (category === 'RSIP_RB') prodWeight = getVal(34);
+                    else if (category === 'RSIP_PLY') prodWeight = getVal(36);
+                    else if (category === 'RSIP_CH') prodWeight = getVal(38);
+                    else if (category === 'PLY/CH ALL' || category === 'CT_CL PLY/CH ALL') {
+                        const pProd = getVal(8);
+                        const cProd = getVal(16);
+                        if (pProd !== null || cProd !== null) prodWeight = (pProd || 0) + (cProd || 0);
+                    }
+
+                    if (!monthlyDataMap[month][year]) {
+                        monthlyDataMap[month][year] = { prodWeight: null, scrapPercentRubber: null, scrapPercentPlyChafer: null, scrapPercentBW: null };
+                        const fields = ['mxRubber','mxCbRubber','mxChmRubber','exRubber','clPlyRubber','clFabricRubber','clRbRubber','clRubber','clChRubber','ctChRubber','ctRbRubber','ctRubber','ctPlyRubber','ctBwRubber','bdRbRubber','bdPlyRubber','bdChRubber','bdBwRubber','curingRubber','rispRubber','rispPlyRubber','rispChRubber','exPlyRubber'];
+                        fields.forEach(f => { monthlyDataMap[month][year][f] = 0; });
+                    }
+                    
+                    monthlyDataMap[month][year].prodWeight = prodWeight;
+                    monthlyDataMap[month][year].scrapPercentRubber = getVal(39);
+                    monthlyDataMap[month][year].scrapPercentPlyChafer = getVal(40);
+                    monthlyDataMap[month][year].scrapPercentBW = getVal(41);
+                });
+
+                if (prodDataReq && prodDataReq.summaries) {
+                    prodDataReq.summaries.forEach((row) => {
+                        const dateStr = row.date;
+                        if (!dateStr) return;
+                        const d = new Date(dateStr);
+                        if (isNaN(d.getTime())) return;
+                        d.setUTCHours(d.getUTCHours() + 12);
+                        const month = (d.getUTCMonth() + 1).toString().padStart(2, "0");
+                        const year = d.getUTCFullYear().toString();
+
+                        if (!monthlyDataMap[month]) monthlyDataMap[month] = {};
+                        if (!monthlyDataMap[month][year]) {
+                            monthlyDataMap[month][year] = { prodWeight: null, scrapPercentRubber: null, scrapPercentPlyChafer: null, scrapPercentBW: null };
+                            const fields = ['mxRubber','mxCbRubber','mxChmRubber','exRubber','clPlyRubber','clFabricRubber','clRbRubber','clRubber','clChRubber','ctChRubber','ctRbRubber','ctRubber','ctPlyRubber','ctBwRubber','bdRbRubber','bdPlyRubber','bdChRubber','bdBwRubber','curingRubber','rispRubber','rispPlyRubber','rispChRubber','exPlyRubber'];
+                            fields.forEach(f => { monthlyDataMap[month][year][f] = 0; });
                         }
 
-                        dataRows.forEach((row) => {
-                            if (!row[0] || !row[0].includes("/")) return;
-                            
-                            const dateParts = row[0].split("/");
-                            let month, year;
-                            
-                            if (dateParts.length === 2) {
-                                // MM/YYYY
-                                month = dateParts[0].padStart(2, "0");
-                                year = dateParts[1];
-                            } else if (dateParts.length === 3) {
-                                // DD/MM/YYYY or MM/DD/YYYY
-                                // Usually Google Sheets published as CSV uses MM/DD/YYYY or DD/MM/YYYY
-                                // Let's try to parse it as a date
-                                const d = new Date(row[0]);
-                                if (!isNaN(d.getTime())) {
-                                    month = (d.getMonth() + 1).toString().padStart(2, "0");
-                                    year = d.getFullYear().toString();
-                                } else {
-                                    // Fallback: assume the middle part is month if it's 3 parts
-                                    month = dateParts[1].padStart(2, "0");
-                                    year = dateParts[2];
-                                }
-                            }
-                            
-                            if (!month || !year) return;
-                            
-                            const getVal = (idx) => {
-                                const val = parseFloat(row[idx]);
-                                return isNaN(val) ? null : val;
-                            };
+                        let addedProdWeight = 0;
+                        const isBW = ['CT_BW', 'BD_BW', 'BW ALL'].includes(category);
+                        const isPlyCh = ['CL_PLY', 'PLY ALL', 'CT_PLY', 'BD_PLY', 'RSIP_PLY', 'CL_CH', 'CT_CH', 'CH ALL', 'BD_CH', 'RSIP_CH', 'PLY/CH ALL', 'CT_CL PLY/CH ALL', 'CL_FABRIC'].includes(category);
+                        const isRubber = ['MX_RB', 'MX_CB', 'MX_CHM', 'EX_RB', 'CL_RB', 'CT_RB', 'BD_RB', 'CUR_RB', 'RSIP_RB', 'RUBBER ALL'].includes(category);
+                        
+                        if (isBW) {
+                             addedProdWeight = parseFloat(row.bicUsage) || 0;
+                        } else if (isPlyCh) {
+                             addedProdWeight = parseFloat(row.plyUsage) || 0;
+                        } else if (isRubber) {
+                             addedProdWeight = parseFloat(row.rubberUsage) || 0;
+                        }
 
-                            let scrap = null;
-                            let prodWeight = null;
-                            
-                            if (category === 'MX_RB') {
-                                scrap = getVal(1);
-                                prodWeight = getVal(2);
-                            } else if (category === 'MX_CB') {
-                                scrap = getVal(3);
-                                prodWeight = getVal(2);
-                            } else if (category === 'MX_CHM') {
-                                scrap = getVal(4);
-                                prodWeight = getVal(2);
-                            } else if (category === 'EX_RB') {
-                                scrap = getVal(5);
-                                prodWeight = getVal(6);
-                            } else if (category === 'CL_PLY') {
-                                scrap = getVal(7);
-                                prodWeight = getVal(8);
-                            } else if (category === 'CL_FABRIC') {
-                                scrap = getVal(9);
-                                prodWeight = getVal(10);
-                            } else if (category === 'CL_RB') {
-                                scrap = getVal(11);
-                                prodWeight = getVal(12);
-                            } else if (category === 'CL_CH') {
-                                scrap = getVal(13);
-                                prodWeight = getVal(14);
-                            } else if (category === 'CT_CH') {
-                                scrap = getVal(15);
-                                prodWeight = getVal(16);
-                            } else if (category === 'CT_RB') {
-                                scrap = getVal(17);
-                                prodWeight = getVal(18);
-                            } else if (category === 'CT_PLY') {
-                                scrap = getVal(19);
-                                prodWeight = getVal(20);
-                            } else if (category === 'CT_BW') {
-                                scrap = getVal(21);
-                                prodWeight = getVal(22);
-                            } else if (category === 'BD_RB') {
-                                scrap = getVal(23);
-                                prodWeight = getVal(24);
-                            } else if (category === 'BD_PLY') {
-                                scrap = getVal(25);
-                                prodWeight = getVal(26);
-                            } else if (category === 'BD_CH') {
-                                scrap = getVal(27);
-                                prodWeight = getVal(28);
-                            } else if (category === 'BD_BW') {
-                                scrap = getVal(29);
-                                prodWeight = getVal(30);
-                            } else if (category === 'RSIP_RB') {
-                                scrap = getVal(33);
-                                prodWeight = getVal(2);
-                            } else if (category === 'RSIP_PLY') {
-                                scrap = getVal(35);
-                                prodWeight = getVal(26);
-                            } else if (category === 'RSIP_CH') {
-                                scrap = getVal(37);
-                                prodWeight = getVal(28);
-                            } else if (category === 'RSIP_BW') {
-                                scrap = getVal(41);
-                                prodWeight = getVal(30);
-                            } else if (category === 'RUBBER ALL') {
-                                const mxS = getVal(1);
-                                const exS = getVal(5);
-                                const clS = getVal(11);
-                                const ctS = getVal(17);
-                                const curS = getVal(31);
-                                const rispS = getVal(33);
-                                
-                                if (mxS !== null || exS !== null || clS !== null || ctS !== null || curS !== null || rispS !== null) {
-                                    scrap = (mxS || 0) + (exS || 0) + (clS || 0) + (ctS || 0) + (curS || 0) + (rispS || 0);
-                                }
-                                prodWeight = getVal(2);
-                            } else if (category === 'PLY ALL') {
-                                const clP = getVal(7);
-                                const ctP = getVal(19);
-                                const bdP = getVal(25);
-                                const rispP = getVal(35);
-                                const exP = getVal(39);
-                                
-                                if (clP !== null || ctP !== null || bdP !== null || rispP !== null || exP !== null) {
-                                    scrap = (clP || 0) + (ctP || 0) + (bdP || 0) + (rispP || 0) + (exP || 0);
-                                }
-                                prodWeight = getVal(8);
-                            } else if (category === 'BW ALL') {
-                                const ctB = getVal(21);
-                                const bdB = getVal(29);
-                                const rsipB = getVal(41);
-                                
-                                if (ctB !== null || bdB !== null || rsipB !== null) {
-                                    scrap = (ctB || 0) + (bdB || 0) + (rsipB || 0);
-                                }
-                                prodWeight = getVal(22);
-                            } else if (category === 'CH ALL') {
-                                const clC = getVal(13);
-                                const ctC = getVal(15);
-                                const bdC = getVal(27);
-                                const rsipC = getVal(37);
-                                
-                                if (clC !== null || ctC !== null || bdC !== null || rsipC !== null) {
-                                    scrap = (clC || 0) + (ctC || 0) + (bdC || 0) + (rsipC || 0);
-                                }
-                                prodWeight = getVal(16);
-                            } else if (category === 'PLY/CH ALL') {
-                                const clP = getVal(7);
-                                const ctP = getVal(19);
-                                const bdP = getVal(25);
-                                const rispP = getVal(35);
-                                const exP = getVal(39);
-                                
-                                const clC = getVal(13);
-                                const ctC = getVal(15);
-                                const bdC = getVal(27);
-                                const rsipC = getVal(37);
-                                
-                                if (clP !== null || ctP !== null || bdP !== null || rispP !== null || exP !== null || clC !== null || ctC !== null || bdC !== null || rsipC !== null) {
-                                    scrap = (clP || 0) + (ctP || 0) + (bdP || 0) + (rispP || 0) + (exP || 0) + (clC || 0) + (ctC || 0) + (bdC || 0) + (rsipC || 0);
-                                }
-                                
-                                const pProd = getVal(8);
-                                const cProd = getVal(16);
-                                if (pProd !== null || cProd !== null) {
-                                    prodWeight = (pProd || 0) + (cProd || 0);
-                                }
+                        if (addedProdWeight > 0) {
+                            if (monthlyDataMap[month][year].newProdWeight === undefined) {
+                                monthlyDataMap[month][year].newProdWeight = 0;
                             }
+                            monthlyDataMap[month][year].newProdWeight += addedProdWeight;
+                        }
+                    });
+                }
 
-                            if (!monthlyDataMap[month]) {
-                                monthlyDataMap[month] = {};
-                            }
-                            
-                            monthlyDataMap[month][year] = {
-                                prodWeight: prodWeight,
-                                mxRubber: getVal(1),
-                                mxCbRubber: getVal(3),
-                                mxChmRubber: getVal(4),
-                                exRubber: getVal(5),
-                                clPlyRubber: getVal(7),
-                                clFabricRubber: getVal(9),
-                                clRbRubber: getVal(11),
-                                clRubber: getVal(11),
-                                clChRubber: getVal(13),
-                                ctChRubber: getVal(15),
-                                ctRbRubber: getVal(17),
-                                ctRubber: getVal(17),
-                                ctPlyRubber: getVal(19),
-                                ctBwRubber: getVal(21),
-                                bdRbRubber: getVal(23),
-                                bdPlyRubber: getVal(25),
-                                bdChRubber: getVal(27),
-                                bdBwRubber: getVal(29),
-                                curingRubber: getVal(31),
-                                rispRubber: getVal(33),
-                                rispPlyRubber: getVal(35),
-                                rispChRubber: getVal(37),
-                                exPlyRubber: getVal(39),
-                                rsipBwRubber: getVal(41),
-                                totalScrapWeight: scrap,
-                                totalScrapRatio: (scrap !== null && prodWeight !== null && prodWeight > 0) 
-                                ? (scrap / prodWeight) * 100 
-                                : null,
-                                // Store sub-totals for PLY/CH ALL
-                                totalPlyScrapWeight: (getVal(7) || 0) + (getVal(19) || 0) + (getVal(25) || 0) + (getVal(35) || 0) + (getVal(39) || 0),
-                                totalChScrapWeight: (getVal(13) || 0) + (getVal(15) || 0) + (getVal(27) || 0) + (getVal(37) || 0),
-                            };
-                        });
+                if (newCsvData && newCsvData.data) {
+                    newCsvData.data.forEach((row) => {
+                       const dateStr = String(row[0]).trim();
+                       if (!dateStr || dateStr === 'Date' || dateStr.toUpperCase() === 'DATE') return;
+                       
+                       const d = new Date(dateStr);
+                       if (isNaN(d.getTime())) return;
+                       d.setUTCHours(d.getUTCHours() + 12);
+                       const month = (d.getUTCMonth() + 1).toString().padStart(2, "0");
+                       const year = d.getUTCFullYear().toString();
 
-                        const formattedData = Object.keys(monthlyDataMap)
-                            .sort()
-                            .map((month) => ({
-                                month,
-                                data: monthlyDataMap[month],
-                            }));
-                            
-                        resolve(formattedData);
-                    },
-                    error: (error) => {
-                        reject(error);
-                    }
+                       if (!monthlyDataMap[month]) monthlyDataMap[month] = {};
+                       if (!monthlyDataMap[month][year]) {
+                           monthlyDataMap[month][year] = { prodWeight: null, scrapPercentRubber: null, scrapPercentPlyChafer: null, scrapPercentBW: null };
+                           const fields = ['mxRubber','mxCbRubber','mxChmRubber','exRubber','clPlyRubber','clFabricRubber','clRbRubber','clRubber','clChRubber','ctChRubber','ctRbRubber','ctRubber','ctPlyRubber','ctBwRubber','bdRbRubber','bdPlyRubber','bdChRubber','bdBwRubber','curingRubber','rispRubber','rispPlyRubber','rispChRubber','exPlyRubber'];
+                           fields.forEach(f => { monthlyDataMap[month][year][f] = 0; });
+                       }
+                       
+                       // Column O is 14 (Rubber), P is 15 (PLY/CH), Q is 16 (BW)
+                       const parseTarget = (val) => {
+                           if (val === undefined || val === null) return null;
+                           const v = String(val).replace('%', '').trim();
+                           if (!v) return null;
+                           const parsed = parseFloat(v);
+                           return isNaN(parsed) ? null : parsed;
+                       };
+
+                       const rubTarget = parseTarget(row[14]);
+                       const plyTarget = parseTarget(row[15]);
+                       const bwTarget = parseTarget(row[16]);
+                       
+                       if (rubTarget !== null) monthlyDataMap[month][year].scrapPercentRubber = rubTarget;
+                       if (plyTarget !== null) monthlyDataMap[month][year].scrapPercentPlyChafer = plyTarget;
+                       if (bwTarget !== null) monthlyDataMap[month][year].scrapPercentBW = bwTarget;
+                    });
+                }
+
+                Object.keys(monthlyDataMap).forEach(m => {
+                    Object.keys(monthlyDataMap[m]).forEach(y => {
+                        const entry = monthlyDataMap[m][y];
+                        if (entry.newProdWeight !== undefined) {
+                             entry.prodWeight = entry.newProdWeight;
+                        }
+                        const fields = ['mxRubber','mxCbRubber','mxChmRubber','exRubber','clPlyRubber','clFabricRubber','clRbRubber','clRubber','clChRubber','ctChRubber','ctRbRubber','ctRubber','ctPlyRubber','ctBwRubber','bdRbRubber','bdPlyRubber','bdChRubber','bdBwRubber','curingRubber','rispRubber','rispPlyRubber','rispChRubber','exPlyRubber'];
+                        fields.forEach(f => { if (entry[f] === undefined) entry[f] = 0; });
+                    });
                 });
-            });
+
+                const newRows = newData.data ? newData.data.slice(0) : [];
+                let colDateIdx = 0, colTypeIdx = 6, colSectionIdx = 7, colWeightIdx = 5; // Default mappings for old spreadsheet format
+                const newHeaderRow = newRows.length > 0 ? newRows.shift() : null; // Remove and inspect the first row
+                
+                if (newHeaderRow && Array.isArray(newHeaderRow)) {
+                    const dIdx = newHeaderRow.findIndex(h => String(h).toUpperCase().trim() === 'DATE');
+                    const mIdx = newHeaderRow.findIndex(h => String(h).toUpperCase().trim() === 'MATERIAL' || String(h).toUpperCase().trim() === 'TYPE');
+                    const sIdx = newHeaderRow.findIndex(h => String(h).toUpperCase().trim() === 'SECTION');
+                    const wIdx = newHeaderRow.findIndex(h => String(h).toUpperCase().trim() === 'WEIGHT');
+                    if (dIdx !== -1) colDateIdx = dIdx;
+                    if (mIdx !== -1) colTypeIdx = mIdx;
+                    if (sIdx !== -1) colSectionIdx = sIdx;
+                    if (wIdx !== -1) colWeightIdx = wIdx;
+                }
+
+                newRows.forEach((row) => {
+                    if (!row || row.length < Math.max(colDateIdx, colTypeIdx, colSectionIdx, colWeightIdx)) return;
+                    
+                    const dateStr = String(row[colDateIdx]).trim();
+                    if (!dateStr) return;
+                    let month, year;
+
+                    if (dateStr.includes("/") || dateStr.includes("-")) {
+                        const separator = dateStr.includes('/') ? '/' : '-';
+                        const parts = dateStr.split(separator);
+                        if (parts.length === 2) {
+                            month = parseInt(parts[0]).toString().padStart(2, "0");
+                            year = parts[1];
+                        } else if (parts.length === 3) {
+                            if (parts[0].length === 4) {
+                                year = parts[0];
+                                month = parseInt(parts[1]).toString().padStart(2, "0");
+                            } else if (parts[2].length === 4) {
+                                year = parts[2];
+                                month = parseInt(parts[0]).toString().padStart(2, "0");
+                            }
+                        }
+                    } else {
+                        const d = new Date(dateStr);
+                        if (!isNaN(d.getTime())) {
+                            month = (d.getMonth() + 1).toString().padStart(2, "0");
+                            year = d.getFullYear().toString();
+                        }
+                    }
+                    if (!month || !year) return;
+                    
+                    // In some cases Date string won't parse properly and month ends up as "NaN", if so, try full parse
+                    if (month === "NaN") {
+                       const d = new Date(dateStr);
+                       if (!isNaN(d.getTime())) {
+                           month = (d.getMonth() + 1).toString().padStart(2, "0");
+                           year = d.getFullYear().toString();
+                       } else {
+                           return; // Give up
+                       }
+                    }
+                    
+                    if (!monthlyDataMap[month]) monthlyDataMap[month] = {};
+                    if (!monthlyDataMap[month][year]) {
+                        monthlyDataMap[month][year] = { prodWeight: null, scrapPercentRubber: null, scrapPercentPlyChafer: null, scrapPercentBW: null };
+                        const fields = ['mxRubber','mxCbRubber','mxChmRubber','exRubber','clPlyRubber','clFabricRubber','clRbRubber','clRubber','clChRubber','ctChRubber','ctRbRubber','ctRubber','ctPlyRubber','ctBwRubber','bdRbRubber','bdPlyRubber','bdChRubber','bdBwRubber','curingRubber','rispRubber','rispPlyRubber','rispChRubber','exPlyRubber'];
+                        fields.forEach(f => { monthlyDataMap[month][year][f] = 0; });
+                    }
+
+                    const weight = parseFloat(String(row[colWeightIdx]).replace(/,/g, '')) || 0;
+                    const scrapType = String(row[colTypeIdx]).trim().toUpperCase();
+                    const section = String(row[colSectionIdx]).trim().toUpperCase();
+
+                    const target = monthlyDataMap[month][year];
+
+                    if ((section === 'MX' || section === 'MIXING') && scrapType === 'RUBBER') target.mxRubber += weight;
+                    if ((section === 'MX' || section === 'MIXING') && (scrapType === 'CB' || scrapType === 'CARBON BLACK')) target.mxCbRubber += weight;
+                    if ((section === 'MX' || section === 'MIXING') && (scrapType === 'CHM' || scrapType === 'CHEMICAL')) target.mxChmRubber += weight;
+                    if ((section === 'EX' || section === 'EXTRUSION') && scrapType === 'RUBBER') target.exRubber += weight;
+                    if ((section === 'EX' || section === 'EXTRUSION') && scrapType === 'PLY') target.exPlyRubber += weight;
+                    if ((section === 'CL' || section === 'CALENDERING') && scrapType === 'PLY') target.clPlyRubber += weight;
+                    if ((section === 'CL' || section === 'CALENDERING') && scrapType === 'FABRIC') target.clFabricRubber += weight;
+                    if ((section === 'CL' || section === 'CALENDERING') && scrapType === 'RUBBER') target.clRbRubber += weight;
+                    if ((section === 'CL' || section === 'CALENDERING') && (scrapType === 'CHAFER' || scrapType === 'CH')) target.clChRubber += weight;
+                    if ((section === 'CT' || section === 'CUTTING') && (scrapType === 'CHAFER' || scrapType === 'CH')) target.ctChRubber += weight;
+                    if ((section === 'CT' || section === 'CUTTING') && scrapType === 'RUBBER') target.ctRbRubber += weight;
+                    if ((section === 'CT' || section === 'CUTTING') && (scrapType === 'PLY' || scrapType === 'CORD')) target.ctPlyRubber += weight; 
+                    if ((section === 'CT' || section === 'CUTTING') && (scrapType === 'BW' || scrapType === 'BEAD WIRE')) target.ctBwRubber += weight;
+                    if ((section === 'TB' || section === 'BD' || section === 'TIRE BUILDING') && scrapType === 'RUBBER') target.bdRbRubber += weight;
+                    if ((section === 'TB' || section === 'BD' || section === 'TIRE BUILDING') && scrapType === 'PLY') target.bdPlyRubber += weight;
+                    if ((section === 'TB' || section === 'BD' || section === 'TIRE BUILDING') && (scrapType === 'CHAFER' || scrapType === 'CH')) target.bdChRubber += weight;
+                    if ((section === 'TB' || section === 'BD' || section === 'TIRE BUILDING') && (scrapType === 'BW' || scrapType === 'BEAD WIRE')) target.bdBwRubber += weight;
+                    if ((section === 'CR' || section === 'CURING' || section === 'CUR' || section === 'CUR_RB') && scrapType === 'RUBBER') target.curingRubber += weight;
+                    if ((section === 'RISP' || section === 'RUBBER INSPECTION') && scrapType === 'RUBBER') target.rispRubber += weight;
+                    if ((section === 'RISP' || section === 'RUBBER INSPECTION') && scrapType === 'PLY') target.rispPlyRubber += weight;
+                    if ((section === 'RISP' || section === 'RUBBER INSPECTION') && (scrapType === 'CHAFER' || scrapType === 'CH')) target.rispChRubber += weight;
+
+                    target.clRubber = target.clRbRubber;
+                    target.ctRubber = target.ctRbRubber;
+                });
+
+                Object.keys(monthlyDataMap).forEach(m => {
+                    Object.keys(monthlyDataMap[m]).forEach(y => {
+                        const target = monthlyDataMap[m][y];
+
+                        let scrap = null;
+                        if (category === 'MX_RB') scrap = target.mxRubber;
+                        else if (category === 'MX_CB') scrap = target.mxCbRubber;
+                        else if (category === 'MX_CHM') scrap = target.mxChmRubber;
+                        else if (category === 'EX_RB') scrap = target.exRubber;
+                        else if (category === 'CL_PLY') scrap = target.clPlyRubber;
+                        else if (category === 'CL_FABRIC') scrap = target.clFabricRubber;
+                        else if (category === 'CL_RB') scrap = target.clRbRubber;
+                        else if (category === 'CL_CH') scrap = target.clChRubber;
+                        else if (category === 'CT_CH') scrap = target.ctChRubber;
+                        else if (category === 'CT_RB') scrap = target.ctRbRubber;
+                        else if (category === 'CT_PLY') scrap = target.ctPlyRubber;
+                        else if (category === 'CT_BW') scrap = target.ctBwRubber;
+                        else if (category === 'BD_RB') scrap = target.bdRbRubber;
+                        else if (category === 'BD_PLY') scrap = target.bdPlyRubber;
+                        else if (category === 'BD_CH') scrap = target.bdChRubber;
+                        else if (category === 'BD_BW') scrap = target.bdBwRubber;
+                        else if (category === 'CUR_RB') scrap = target.curingRubber;
+                        else if (category === 'RSIP_RB') scrap = target.rispRubber;
+                        else if (category === 'RSIP_PLY') scrap = target.rispPlyRubber;
+                        else if (category === 'RSIP_CH') scrap = target.rispChRubber;
+                        else if (category === 'RUBBER ALL') scrap = target.mxRubber + target.exRubber + target.clRubber + target.ctRubber + target.curingRubber + target.rispRubber;
+                        else if (category === 'PLY ALL') scrap = target.clPlyRubber + target.ctPlyRubber + target.bdPlyRubber + target.rispPlyRubber + target.exPlyRubber;
+                        else if (category === 'BW ALL') scrap = target.ctBwRubber + target.bdBwRubber;
+                        else if (category === 'CH ALL') scrap = target.clChRubber + target.ctChRubber + target.bdChRubber + target.rispChRubber;
+                        else if (category === 'PLY/CH ALL') scrap = target.clPlyRubber + target.ctPlyRubber + target.bdPlyRubber + target.rispPlyRubber + target.exPlyRubber + target.clChRubber + target.ctChRubber + target.bdChRubber + target.rispChRubber;
+                        else if (category === 'CT_CL PLY/CH ALL') scrap = target.clPlyRubber + target.ctPlyRubber + target.clChRubber + target.ctChRubber;
+
+                        target.totalScrapWeight = scrap;
+                        
+                        if (scrap !== null && target.prodWeight !== null && target.prodWeight > 0) {
+                            target.totalScrapRatio = (scrap / target.prodWeight) * 100;
+                        } else {
+                            target.totalScrapRatio = null;
+                        }
+
+                        target.totalPlyScrapWeight = target.clPlyRubber + target.ctPlyRubber + target.bdPlyRubber + target.rispPlyRubber + target.exPlyRubber;
+                        target.totalChScrapWeight = target.clChRubber + target.ctChRubber + target.bdChRubber + target.rispChRubber;
+                        target.ctClTotalPlyScrapWeight = target.clPlyRubber + target.ctPlyRubber;
+                        target.ctClTotalChScrapWeight = target.clChRubber + target.ctChRubber;
+                    });
+                });
+
+                const formattedData = Object.keys(monthlyDataMap)
+                    .sort()
+                    .map((month) => ({
+                        month,
+                        data: monthlyDataMap[month],
+                    }));
+                    
+                return formattedData;
+            } catch (error) {
+                console.error("Error fetching scrap data:", error);
+                throw error;
+            }
         }
+
+        const copyElementAsImage = async (element, lang, setIsCapturing) => {
+            try {
+                if (setIsCapturing) setIsCapturing(true);
+                
+                const originalCursor = element.style.cursor;
+                element.style.cursor = 'wait';
+                document.body.style.cursor = 'wait';
+                
+                // Wait for state to propagate and animations to stop
+                await new Promise(resolve => setTimeout(resolve, setIsCapturing ? 500 : 50));
+
+                const canvas = await html2canvas(element, {
+                    scale: 2,
+                    backgroundColor: '#ffffff',
+                    logging: false,
+                    useCORS: true,
+                    allowTaint: false
+                });
+                
+                canvas.toBlob(async (blob) => {
+                    element.style.cursor = originalCursor;
+                    document.body.style.cursor = '';
+                    if (setIsCapturing) setIsCapturing(false);
+                    
+                    if (blob) {
+                        try {
+                            await navigator.clipboard.write([
+                                new ClipboardItem({ 'image/png': blob })
+                            ]);
+                            alert(lang === 'zh' ? '已複製為圖片' : 'Copied as image');
+                        } catch (err) {
+                            console.error('Failed to copy image to clipboard', err);
+                            alert(lang === 'zh' ? '複製失敗' : 'Failed to copy');
+                        }
+                    }
+                }, 'image/png');
+            } catch (err) {
+                element.style.cursor = '';
+                document.body.style.cursor = '';
+                console.error('Failed to generate image', err);
+            }
+        };
 
         // --- Components ---
         // Chart Component
@@ -527,23 +721,42 @@
             category, 
             primaryYear,
             compareYear,
+            scrapPercentYear,
             chartType,
             data,
             pointStyles,
             onPointStyleChange,
-            isCapturing
+            isCapturing,
+            setIsCapturing
         }) => {
+            const chartRef = useRef(null);
+
             if (!window.Recharts) {
                 return <div className="w-full h-[400px] flex items-center justify-center text-white bg-[#333333]">Recharts Loading...</div>;
             }
             const { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } = Recharts;
             const t = translations[lang];
 
+            const getScrapPercentValue = (d, year) => {
+                if (year === 'No') return null;
+                if (chartType === 'weight') return null;
+                
+                const rubberCats = ['RUBBER ALL', 'MX_RB', 'MX_CB', 'MX_CHM', 'CL_RB', 'EX_RB', 'CT_RB', 'BD_RB', 'CUR_RB', 'RSIP_RB'];
+                const plyChCats = ['PLY ALL', 'CH ALL', 'PLY/CH ALL', 'CT_CL PLY/CH ALL', 'CL_PLY', 'CL_CH', 'CT_PLY', 'CT_CH', 'BD_PLY', 'BD_CH', 'RSIP_PLY', 'RSIP_CH', 'EX_PLY', 'CL_FABRIC'];
+                const bwCats = ['BW ALL', 'CT_BW', 'BD_BW'];
+
+                if (rubberCats.includes(category)) return d.data[year]?.scrapPercentRubber;
+                if (plyChCats.includes(category)) return d.data[year]?.scrapPercentPlyChafer;
+                if (bwCats.includes(category)) return d.data[year]?.scrapPercentBW;
+                return null;
+            };
+
             const chartData = data.map(d => ({
                 month: getMonthName(d.month, lang),
                 originalMonth: d.month,
                 primaryValue: chartType === 'weight' ? d.data[primaryYear]?.totalScrapWeight : d.data[primaryYear]?.totalScrapRatio,
                 compareValue: chartType === 'weight' ? d.data[compareYear]?.totalScrapWeight : d.data[compareYear]?.totalScrapRatio,
+                scrapPercentValue: getScrapPercentValue(d, scrapPercentYear),
             }));
 
             // Debug logging for desktop version issues
@@ -563,9 +776,9 @@
                 if (active && payload && payload.length) {
                     return (
                         <div className="bg-zinc-900 border border-zinc-700 p-2 sm:p-3 rounded-lg shadow-lg z-50">
-                            <p className="text-zinc-300 mb-1 sm:mb-2 text-xs sm:text-base">{label}</p>
+                            <p className="text-zinc-300 mb-1 sm:mb-2 text-sm sm:text-lg">{label}</p>
                             {payload.map((entry, index) => (
-                                <p key={index} style={{ color: entry.color }} className="text-[10px] sm:text-sm font-medium">
+                                <p key={index} style={{ color: entry.color }} className="text-[12px] sm:text-base font-medium">
                                     {entry.name}: {chartType === 'weight' 
                                         ? (entry.value !== undefined && entry.value !== null ? Math.round(entry.value).toLocaleString("en-US") : "0") 
                                         : (entry.value !== undefined && entry.value !== null ? entry.value.toFixed(3) : "0.000")}
@@ -625,8 +838,8 @@
                 const primaryVal = dataPoint.primaryValue;
                 const isHigherOnScreen = primaryVal !== null && primaryVal !== undefined && value > primaryVal;
                 
-                const rectY = isHigherOnScreen ? -26 : 8;
-                const textY = isHigherOnScreen ? -13 : 21;
+                const rectY = isHigherOnScreen ? -30 : 8;
+                const textY = isHigherOnScreen ? -14 : 24;
                 
                 const year = compareYear;
                 const month = dataPoint.originalMonth;
@@ -638,9 +851,30 @@
 
                 return (
                     <g transform={`translate(${x},${y})`} onClick={(e) => { e.stopPropagation(); handleLabelClick(year, month); }} style={{ cursor: 'pointer' }}>
-                        <rect x="-20" y={rectY} width="40" height="18" fill={isRed ? "#ff0000" : "#fff"} rx="4" ry="4" stroke="#000" strokeWidth="0.5" />
-                        <text x="0" y={textY} dy="0" fill={isRed ? "#fff" : "#000"} fontSize="11" fontWeight="bold" textAnchor="middle">
+                        <rect x="-27.5" y={rectY} width="55" height="22" fill={isRed ? "#ff0000" : "#fff"} rx="4" ry="4" stroke="#000" strokeWidth="0.5" />
+                        <text x="0" y={textY} dy="0" fill={isRed ? "#fff" : "#000"} fontSize="16" fontWeight="bold" textAnchor="middle">
                             {chartType === 'weight' ? Math.round(value).toLocaleString("en-US") : value.toFixed(3)}
+                        </text>
+                    </g>
+                );
+            };
+
+            const CustomLabelScrap = (props) => {
+                const { x, y, value, index, payload } = props;
+                if (value === null || value === undefined || typeof x !== 'number' || typeof y !== 'number') return null;
+                
+                const dataPoint = payload || chartData[index];
+                if (!dataPoint) return null;
+
+                const year = scrapPercentYear;
+                const month = dataPoint.originalMonth;
+                if (!month) return null;
+
+                return (
+                    <g transform={`translate(${x},${y})`} onClick={(e) => { e.stopPropagation(); handleLabelClick(year, month); }} style={{ cursor: 'pointer' }}>
+                        <rect x="-27.5" y="-30" width="55" height="22" fill="#FFD700" rx="4" ry="4" stroke="#fff" strokeWidth="0.5" />
+                        <text x="0" y="-14" dy="0" fill="#000" fontSize="16" fontWeight="bold" textAnchor="middle">
+                            {value.toFixed(3)}
                         </text>
                     </g>
                 );
@@ -656,8 +890,8 @@
                 const compareVal = dataPoint.compareValue;
                 const isHigherOnScreen = compareVal === null || compareVal === undefined || value >= compareVal;
                 
-                const rectY = isHigherOnScreen ? -26 : 8;
-                const textY = isHigherOnScreen ? -13 : 21;
+                const rectY = isHigherOnScreen ? -30 : 8;
+                const textY = isHigherOnScreen ? -14 : 24;
 
                 const year = primaryYear;
                 const month = dataPoint.originalMonth;
@@ -669,8 +903,8 @@
 
                 return (
                     <g transform={`translate(${x},${y})`} onClick={(e) => { e.stopPropagation(); handleLabelClick(year, month); }} style={{ cursor: 'pointer' }}>
-                        <rect x="-20" y={rectY} width="40" height="18" fill={isRed ? "#ff0000" : "#00BFFF"} rx="4" ry="4" stroke="#fff" strokeWidth="0.5" />
-                        <text x="0" y={textY} dy="0" fill={isRed ? "#fff" : "#000"} fontSize="11" fontWeight="bold" textAnchor="middle">
+                        <rect x="-27.5" y={rectY} width="55" height="22" fill={isRed ? "#ff0000" : "#00BFFF"} rx="4" ry="4" stroke="#fff" strokeWidth="0.5" />
+                        <text x="0" y={textY} dy="0" fill={isRed ? "#fff" : "#000"} fontSize="16" fontWeight="bold" textAnchor="middle">
                             {chartType === 'weight' ? Math.round(value).toLocaleString("en-US") : value.toFixed(3)}
                         </text>
                     </g>
@@ -684,20 +918,25 @@
             const yearSuffix = lang === 'zh' ? '年' : '';
 
             return (
-                <div className="w-full bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden flex-shrink-0 relative">
+                <div 
+                    ref={chartRef}
+                    onDoubleClick={() => copyElementAsImage(chartRef.current, lang, setIsCapturing)}
+                    title={lang === 'zh' ? '雙擊複製圖表' : 'Double click to copy chart'}
+                    className="w-full bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden flex-shrink-0 relative cursor-pointer"
+                >
                     <div className="p-4 lg:p-6 border-b border-gray-100 bg-gradient-to-r from-[#7bc97b] to-[#90EE90] flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
                         <div className="flex flex-col lg:flex-row items-baseline gap-2">
-                            <h1 className="text-2xl lg:text-3xl font-bold text-gray-900 tracking-tight">
+                            <h1 className="text-3xl lg:text-4xl font-bold text-gray-900 tracking-tight">
                                 {compareYear}{yearSuffix} / {primaryYear}{yearSuffix} {categoryName} {chartTypeName}
                             </h1>
-                            <span className="text-gray-800 font-medium text-sm lg:text-base">
+                            <span className="text-gray-800 font-medium text-base lg:text-lg">
                                 {t.subtitle}
                             </span>
                         </div>
                     </div>
 
-                    <div className="w-full h-[400px] bg-[#333333] p-4 relative rounded-b-2xl" id="chart-container">
-                        <div className="absolute top-4 right-8 flex items-center gap-4 text-sm font-bold z-10 bg-[#333333]/60 px-3 py-1 rounded-full backdrop-blur-sm">
+                    <div className="w-full h-[500px] bg-[#333333] p-4 relative rounded-b-2xl" id="chart-container">
+                        <div className="absolute top-4 right-8 flex items-center gap-4 text-base font-bold z-10 bg-[#333333]/60 px-3 py-1 rounded-full backdrop-blur-sm">
                             <div className="flex items-center gap-2">
                                 <div className="w-4 h-1 bg-[#00BFFF] rounded-full"></div>
                                 <span className="text-white">{primaryYear}</span>
@@ -706,29 +945,39 @@
                                 <div className="w-4 h-1 bg-white rounded-full"></div>
                                 <span className="text-white">{compareYear}</span>
                             </div>
+                            {scrapPercentYear !== 'No' && (
+                                <div className="flex items-center gap-2">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#FFD700" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="flex-shrink-0">
+                                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                                        <polyline points="14 2 14 8 20 8"></polyline>
+                                        <text x="7" y="18" fill="#FFD700" fontSize="6" fontWeight="bold" fontFamily="Arial">CSV</text>
+                                    </svg>
+                                    <span className="text-[#FFD700]">{scrapPercentYear} CSV</span>
+                                </div>
+                            )}
                         </div>
                         
-                        <ResponsiveContainer width="99%" height={400}>
+                        <ResponsiveContainer width="99%" height={500}>
                             <LineChart
                                 data={chartData}
-                                margin={{ top: 40, right: 30, left: 20, bottom: 5 }}
+                                margin={{ top: 40, right: 30, left: 20, bottom: 40 }}
                             >
                                 <CartesianGrid strokeDasharray="3 3" stroke="#555" vertical={false} />
                                 <XAxis 
                                     dataKey="month" 
                                     stroke="#fff" 
-                                    tick={{ fill: "#fff", fontSize: 12 }} 
+                                    tick={{ fill: "#fff", fontSize: 22 }} 
                                     axisLine={{ stroke: "#666" }} 
                                     tickLine={false} 
                                 />
                                 <YAxis 
                                     stroke="#fff" 
-                                    tick={{ fill: "#fff", fontSize: 12 }} 
+                                    tick={{ fill: "#fff", fontSize: 20 }} 
                                     tickFormatter={formatYAxis} 
                                     domain={[0, 'auto']} 
                                     axisLine={false} 
                                     tickLine={false} 
-                                    width={80}
+                                    width={100}
                                 />
                                 <Tooltip content={<CustomTooltip />} />
                                 <Line 
@@ -755,6 +1004,21 @@
                                     label={<CustomLabelPrimary />} 
                                     isAnimationActive={!isCapturing}
                                 />
+                                {scrapPercentYear !== 'No' && (
+                                    <Line 
+                                        type="monotone" 
+                                        dataKey="scrapPercentValue" 
+                                        name={`${scrapPercentYear} Scrap %`} 
+                                        stroke="#FFD700" 
+                                        strokeWidth={2} 
+                                        strokeDasharray="5 5"
+                                        dot={<CustomDot />}
+                                        activeDot={{ r: 6 }} 
+                                        connectNulls 
+                                        label={<CustomLabelScrap />}
+                                        isAnimationActive={!isCapturing}
+                                    />
+                                )}
                             </LineChart>
                         </ResponsiveContainer>
                     </div>
@@ -763,8 +1027,13 @@
         };
 
         // DataTable Component
-        const DataTable = ({ lang, primaryYear, compareYear, data, category, pointStyles, onPointStyleChange, isCapturing }) => {
+        const DataTable = ({ lang, primaryYear, compareYear, scrapPercentYear, data, category, pointStyles, onPointStyleChange, isCapturing, setIsCapturing, expandedRows, setExpandedRows, tableFontSize, onCellClick, isEditMode, selectedCells }) => {
+            const tableRef = useRef(null);
             const t = translations[lang];
+
+            const toggleRow = (baseKey) => {
+                setExpandedRows(prev => ({ ...prev, [baseKey]: !prev[baseKey] }));
+            };
 
             const formatNumber = (num) => {
                 if (num === null || num === undefined) return "";
@@ -774,18 +1043,6 @@
             const formatRatio = (num) => {
                 if (num === null || num === undefined) return "";
                 return num.toFixed(3);
-            };
-
-            const handleCellClick = (uniqueId) => {
-                onPointStyleChange(prev => {
-                    const currentStyle = prev[uniqueId];
-                    if (currentStyle?.isRed) {
-                        const { isRed, ...rest } = currentStyle;
-                        return { ...prev, [uniqueId]: rest };
-                    } else {
-                        return { ...prev, [uniqueId]: { ...currentStyle, isRed: true } };
-                    }
-                });
             };
 
             const fetchAndShowDetails = async (labelEn, labelZh, monthNum) => {
@@ -971,7 +1228,17 @@
                     else if (category === 'BW ALL') scrapType = 'BW';
                     else if (category === 'CH ALL') scrapType = 'CHAFER';
                     else if (category === 'PLY/CH ALL') scrapType = 'PLY/CH';
-                    else scrapType = "TOTAL";
+                    else if (category === 'CT_CL PLY/CH ALL') scrapType = 'PLY/CH';
+                    else {
+                        const cParts = category.split('_');
+                        if (cParts.length >= 2) {
+                            section = cParts[0];
+                            scrapType = cParts.slice(1).join('_');
+                            if (scrapType === 'RB') scrapType = 'RUBBER';
+                        } else {
+                            scrapType = "TOTAL";
+                        }
+                    }
                 }
                 
                 // Map dashboard labels to Google Sheet values
@@ -1021,23 +1288,41 @@
                 `);
                 newTab.document.close();
 
-                const RAW_CSV_URL = "https://docs.google.com/spreadsheets/d/1riSjXMnWzcGJuVXPvDO8aJ3QqwuhQyL-fHEp5tGtEhM/export?format=csv&gid=0";
+                const RAW_CSV_URL = "https://script.google.com/macros/s/AKfycbwgP4jhdt0rom8RB3r3yvc42Xg-kgB4FgJ2DQTVOFHTir1g6mVFjCAMW5BB0dpbFbSARg/exec?action=getRawScrap";
                 const cacheBuster = new Date().getTime();
                 const rawUrlWithCache = `${RAW_CSV_URL}&t=${cacheBuster}`;
                 
                 try {
-                    const dataArray = await new Promise((resolve, reject) => {
-                        Papa.parse(rawUrlWithCache, {
-                            download: true,
-                            header: false,
-                            complete: (results) => {
-                                resolve(results.data);
-                            },
-                            error: (err) => {
-                                reject(err);
-                            }
-                        });
-                    });
+                    let dataArray;
+                    if (cachedDataPromise) {
+                        const cached = await cachedDataPromise;
+                        // Clone the array to avoid mutating cached data
+                        dataArray = [...cached[1].data.map(row => Array.isArray(row) ? [...row] : {...row})];
+                    } else {
+                        const res = await fetch(rawUrlWithCache);
+                        const text = await res.text();
+                        try {
+                            let jsonData = JSON.parse(text);
+                            if (jsonData.error) throw new Error(jsonData.error);
+                            dataArray = Array.isArray(jsonData) ? jsonData : (jsonData.data || jsonData.items || Object.values(jsonData));
+                        } catch (e) {
+                             dataArray = await new Promise((resolve, reject) => {
+                                const SHEET_EXPORT_URL = "https://docs.google.com/spreadsheets/d/1GHwq2tHt0ZDwuGHfTZSov6b2JgfURUKt7c8WLZWPGKs/export?format=csv&gid=359852687";
+                                Papa.parse(`${SHEET_EXPORT_URL}&t=${cacheBuster}`, {
+                                    download: true,
+                                    header: false,
+                                    complete: (results) => resolve(results.data),
+                                    error: () => {
+                                        Papa.parse(text, {
+                                            header: false,
+                                            complete: (results) => resolve(results.data),
+                                            error: reject
+                                        });
+                                    }
+                                });
+                             });
+                        }
+                    }
                     
                     if (!Array.isArray(dataArray)) {
                         console.error("Data is not an array:", dataArray);
@@ -1046,17 +1331,32 @@
                     
                     // Item eight: filter this array to extract only the objects where the first column matches your month and year string and the column J matches your section string and the column G matches your scrap type string
                     const headerRow = dataArray.length > 0 ? dataArray[0] : null;
+                    
+                    let colDateIdx = 0, colTypeIdx = 6, colSectionIdx = 7, colWeightIdx = 2; // Defaults
+                    if (headerRow && Array.isArray(headerRow)) {
+                        const dIdx = headerRow.findIndex(h => String(h).toUpperCase().trim() === 'DATE');
+                        const mIdx = headerRow.findIndex(h => { const up = String(h).toUpperCase().trim(); return up === 'MATERIAL' || up === 'TYPE'; });
+                        const sIdx = headerRow.findIndex(h => String(h).toUpperCase().trim() === 'SECTION');
+                        const wIdx = headerRow.findIndex(h => String(h).toUpperCase().trim() === 'WEIGHT');
+                        if (dIdx !== -1) colDateIdx = dIdx;
+                        if (mIdx !== -1) colTypeIdx = mIdx;
+                        if (sIdx !== -1) colSectionIdx = sIdx;
+                        if (wIdx !== -1) colWeightIdx = wIdx;
+                    }
+
                     const filteredData = dataArray.filter((item, index) => {
                         try {
                             if (index === 0) return false; // Skip header for filtering
                             
-                            // Based on the Google Sheet data structure:
-                            // col 0: Date
-                            // col 6: TYPE (Scrap Type)
-                            // col 9: easy (Section - MX, EX, CR, etc.)
-                            const colA = Array.isArray(item) ? item[0] : (item['Column A'] || item['Date'] || Object.values(item)[0]);
-                            const colG = Array.isArray(item) ? item[6] : (item['Column G'] || item['TYPE'] || Object.values(item)[6]);
-                            const colJ = Array.isArray(item) ? item[9] : (item['Column J'] || item['easy'] || Object.values(item)[9]);
+                            const colA = Array.isArray(item) ? item[colDateIdx] : (item['Column A'] || item['Date'] || Object.values(item)[colDateIdx]);
+                            const colG = Array.isArray(item) ? item[colTypeIdx] : (item['Column G'] || item['TYPE'] || item['Material'] || Object.values(item)[colTypeIdx]);
+                            const colH = Array.isArray(item) ? item[colSectionIdx] : (item['Column H'] || item['SECTION'] || item['Section'] || Object.values(item)[colSectionIdx]);
+                            const colW = Array.isArray(item) ? item[colWeightIdx] : (item['Column C'] || item['Weight'] || Object.values(item)[colWeightIdx]);
+
+                            const weightVal = parseFloat(String(colW).replace(/,/g, ''));
+                            if (isNaN(weightVal) || weightVal === 0) {
+                                return false; // Skip rows where weight is 0
+                            }
                             
                             let matchDate = false;
                             if (colA) {
@@ -1110,7 +1410,28 @@
                                 }
                             }
                             
-                            const matchSection = section === "TOTAL" ? true : String(colJ).trim().toUpperCase() === mappedSection.toUpperCase();
+                            const rowSection = String(colH).trim().toUpperCase();
+                            let matchSection = false;
+                            if (section === "TOTAL") {
+                                if (category === 'CT_CL PLY/CH ALL') {
+                                    const allowed = ['CL', 'CALENDERING', 'CT', 'CUTTING'];
+                                    matchSection = allowed.includes(rowSection);
+                                } else {
+                                    matchSection = true;
+                                }
+                            } else {
+                                const allowedSections = [];
+                                if (mappedSection === 'MX') allowedSections.push('MX', 'MIXING');
+                                else if (mappedSection === 'EX') allowedSections.push('EX', 'EXTRUSION');
+                                else if (mappedSection === 'CL') allowedSections.push('CL', 'CALENDERING');
+                                else if (mappedSection === 'CT') allowedSections.push('CT', 'CUTTING');
+                                else if (mappedSection === 'TB' || mappedSection === 'BD') allowedSections.push('TB', 'BD', 'TIRE BUILDING');
+                                else if (mappedSection === 'CR' || mappedSection === 'CUR' || mappedSection === 'CURING' || mappedSection === 'CUR_RB') allowedSections.push('CR', 'CUR', 'CURING', 'CUR_RB');
+                                else if (mappedSection === 'RISP' || mappedSection === 'RUBBER INSPECTION') allowedSections.push('RISP', 'RUBBER INSPECTION');
+                                else allowedSections.push(mappedSection);
+
+                                matchSection = allowedSections.includes(rowSection);
+                            }
                             
                             let matchScrapType = false;
                             if (section === "TOTAL") {
@@ -1132,6 +1453,45 @@
                         }
                     });
                     
+                    if (headerRow && Array.isArray(headerRow)) {
+                        const KEEP_COLS = ['Date', 'Material', 'Weight', 'Reason', 'Sub reason', 'Section'];
+                        let keepIndices = [];
+                        KEEP_COLS.forEach(key => {
+                            let idx = -1;
+                            if (key === 'Sub reason') {
+                                idx = headerRow.findIndex(h => { const up = String(h).toUpperCase(); return up.includes('REASON FOR') || up.includes('MAIN REASON') || up === 'SUB REASON'; });
+                            } else if (key === 'Reason') {
+                                idx = headerRow.findIndex(h => String(h).toUpperCase().trim() === 'REASON');
+                            } else if (key === 'Date') {
+                                idx = headerRow.findIndex(h => String(h).toUpperCase().trim() === 'DATE');
+                            } else if (key === 'Material') {
+                                idx = headerRow.findIndex(h => { const up = String(h).toUpperCase().trim(); return up === 'MATERIAL' || up === 'TYPE'; });
+                            } else if (key === 'Weight') {
+                                idx = headerRow.findIndex(h => String(h).toUpperCase().trim() === 'WEIGHT');
+                            } else if (key === 'Section') {
+                                idx = headerRow.findIndex(h => String(h).toUpperCase().trim() === 'SECTION');
+                            }
+                            keepIndices.push(idx); 
+                        });
+
+                        const originalHeader = [...headerRow];
+                        headerRow.length = 0; // Clear it
+                        keepIndices.forEach((idx, i) => {
+                             if (idx !== -1) headerRow.push(i === 4 ? 'Sub reason' : originalHeader[idx]);
+                             else headerRow.push(KEEP_COLS[i]);
+                        });
+
+                        for (let i = 0; i < filteredData.length; i++) {
+                             const row = filteredData[i];
+                             if (Array.isArray(row)) {
+                                 filteredData[i] = keepIndices.map(idx => {
+                                     return idx !== -1 ? row[idx] : '';
+                                 });
+                             }
+                        }
+                        colDateIdx = 0; // We have restructured, so Date is now at index 0.
+                    }
+
                     if (headerRow && filteredData.length > 0 && Array.isArray(filteredData[0])) {
                         filteredData.unshift(headerRow);
                     }
@@ -1147,27 +1507,30 @@
                             <title>${translate('Details for')} ${currentLabel} - ${translate('Month')} ${monthStr}</title>
                             <style>
                                 body { font-family: 'Inter', sans-serif; padding: 20px; background-color: #f9fafb; color: #111827; }
-                                h3 { margin-top: 0; margin-bottom: 20px; font-size: 20px; font-weight: 600; }
+                                h3 { margin-top: 0; margin-bottom: 20px; font-size: 24px; font-weight: 600; }
                                 .container { background-color: white; padding: 24px; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); max-width: 1200px; margin: 0 auto; overflow-x: auto; }
-                                .row { border-bottom: 1px solid #e5e7eb; padding: 12px 0; font-size: 14px; word-break: break-all; }
+                                .row { border-bottom: 1px solid #e5e7eb; padding: 12px 0; font-size: 16px; word-break: break-all; }
                                 .row:last-child { border-bottom: none; }
                                 .no-data { padding: 20px; color: #6b7280; text-align: center; background: #f3f4f6; border-radius: 6px; }
                                 table { width: 100%; border-collapse: collapse; margin-top: 10px; table-layout: auto; }
-                                th, td { border: 1px solid #e5e7eb; padding: 8px 12px; text-align: left; font-size: 14px; white-space: nowrap; }
+                                th, td { border: 1px solid #e5e7eb; padding: 8px 12px; text-align: left; font-size: 16px; white-space: normal; word-wrap: break-word; max-width: 300px; }
                                 @media (max-width: 640px) {
-                                    th, td { padding: 4px 6px; font-size: 10px; }
-                                    h3 { font-size: 16px; }
+                                    th, td { padding: 4px 6px; font-size: 12px; }
+                                    h3 { font-size: 18px; }
                                     .container { padding: 12px; }
                                 }
                                 th { background-color: #f9fafb; font-weight: 600; vertical-align: bottom; }
-                                .filter-input { width: 100%; box-sizing: border-box; margin-top: 8px; padding: 4px; font-size: 12px; border: 1px solid #d1d5db; border-radius: 4px; font-weight: normal; }
+                                .filter-input { width: 100%; box-sizing: border-box; margin-top: 8px; padding: 4px; font-size: 14px; border: 1px solid #d1d5db; border-radius: 4px; font-weight: normal; }
                                 .total-row { font-weight: bold; background-color: #f3f4f6; }
                                 .total-row td { border-top: 2px solid #d1d5db; }
                             </style>
                         </head>
                         <body>
                             <div class="container">
-                                <h3>${translate('Details for')} ${currentLabel} - ${translate('Month')} ${monthStr}</h3>
+                                <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 20px; flex-wrap: wrap; gap: 10px;">
+                                    <h3 style="margin: 0; flex: 1;">${translate('Details for')} ${currentLabel} - ${translate('Month')} ${monthStr}</h3>
+                                    <div id="header-weight-total" style="font-size: 20px; font-weight: bold; background-color: #fee2e2; color: #b91c1c; border: 1px solid #fca5a5; padding: 6px 16px; border-radius: 8px; display: none;"></div>
+                                </div>
                                 <div id="content"></div>
                             </div>
                             <script>
@@ -1209,6 +1572,7 @@
                                         }
                                     });
                                     
+                                    let weightTotalStr = '';
                                     const totalRow = tbody.querySelector('.total-row');
                                     if (totalRow) {
                                         const totalCells = totalRow.querySelectorAll('td');
@@ -1216,11 +1580,34 @@
                                             if (index === 0) {
                                                 cell.textContent = '${translate('Total')}';
                                             } else if (hasNumericColumn[index]) {
-                                                cell.textContent = Number.isInteger(totals[index]) ? totals[index] : totals[index].toFixed(2);
+                                                const val = Number.isInteger(totals[index]) ? totals[index] : totals[index].toFixed(2);
+                                                cell.textContent = val;
+                                                
+                                                const th = table.querySelectorAll('th')[index];
+                                                if (th) {
+                                                    const colName = th.textContent.toUpperCase();
+                                                    if (colName.includes('WEIGHT') || colName.includes('重量')) {
+                                                        weightTotalStr = val;
+                                                    }
+                                                }
                                             } else {
                                                 cell.textContent = '';
                                             }
                                         });
+
+                                        if (!weightTotalStr && totals[2] > 0) {
+                                            weightTotalStr = Number.isInteger(totals[2]) ? totals[2] : totals[2].toFixed(2);
+                                        }
+                                    }
+                                    
+                                    const headerTotal = document.getElementById('header-weight-total');
+                                    if (headerTotal) {
+                                        if (weightTotalStr !== '') {
+                                            headerTotal.textContent = '${translate('Total Weight')}: ' + weightTotalStr;
+                                            headerTotal.style.display = 'block';
+                                        } else {
+                                            headerTotal.style.display = 'none';
+                                        }
                                     }
                                 }
                                 setTimeout(filterTable, 100);
@@ -1268,7 +1655,8 @@
                                             dateObj.setUTCHours(dateObj.getUTCHours() + 12);
                                             const yy = dateObj.getUTCFullYear();
                                             const mm = String(dateObj.getUTCMonth() + 1).padStart(2, '0');
-                                            cellText = `${mm}-${yy}`;
+                                            const dd = String(dateObj.getUTCDate()).padStart(2, '0');
+                                            cellText = `${dd}-${mm}-${yy}`;
                                         }
                                     }
                                     
@@ -1293,42 +1681,48 @@
                              const table = newTab.document.createElement('table');
                              const thead = newTab.document.createElement('thead');
                              const tbody = newTab.document.createElement('tbody');
+                             
+                             // Add Header Row
+                             if (headerRow) {
+                                 const trHeader = newTab.document.createElement('tr');
+                                 headerRow.forEach((cell, cellIndex) => {
+                                     const th = newTab.document.createElement('th');
+                                     let cellText = cell !== undefined && cell !== null ? String(cell) : '';
+                                     th.innerHTML = `<div>${translate(cellText)}</div><input type="text" class="filter-input" data-col="${cellIndex}" placeholder="${translate('Filter...')}" onkeyup="filterTable()">`;
+                                     trHeader.appendChild(th);
+                                 });
+                                 thead.appendChild(trHeader);
+                             }
+
                              filteredData.forEach((rowData, rowIndex) => {
                                 const tr = newTab.document.createElement('tr');
                                 rowData.forEach((cell, cellIndex) => {
-                                    const cellElement = rowIndex === 0 ? newTab.document.createElement('th') : newTab.document.createElement('td');
+                                    const td = newTab.document.createElement('td');
                                     
                                     let cellText = cell !== undefined && cell !== null ? String(cell) : '';
                                     
                                     // Format the first column (Date) to MM-YYYY
-                                    if (rowIndex > 0 && cellIndex === 0 && cellText) {
+                                    if (cellIndex === colDateIdx && cellText) {
                                         const dateObj = new Date(cellText);
                                         if (!isNaN(dateObj.getTime())) {
                                             // Add 12 hours to handle timezone offsets as done in filtering
                                             dateObj.setUTCHours(dateObj.getUTCHours() + 12);
                                             const yy = dateObj.getUTCFullYear();
                                             const mm = String(dateObj.getUTCMonth() + 1).padStart(2, '0');
-                                            cellText = `${mm}-${yy}`;
+                                            const dd = String(dateObj.getUTCDate()).padStart(2, '0');
+                                            cellText = `${dd}-${mm}-${yy}`;
                                         }
                                     }
                                     
-                                    if (rowIndex === 0) {
-                                        cellElement.innerHTML = `<div>${translate(cellText)}</div><input type="text" class="filter-input" data-col="${cellIndex}" placeholder="${translate('Filter...')}" onkeyup="filterTable()">`;
-                                    } else {
-                                        cellElement.textContent = translate(cellText);
-                                    }
-                                    tr.appendChild(cellElement);
+                                    td.textContent = translate(cellText);
+                                    tr.appendChild(td);
                                 });
-                                if (rowIndex === 0) {
-                                    thead.appendChild(tr);
-                                } else {
-                                    tbody.appendChild(tr);
-                                }
+                                tbody.appendChild(tr);
                             });
                             
                             const totalRow = newTab.document.createElement('tr');
                             totalRow.className = 'total-row';
-                            const numCols = filteredData[0].length;
+                            const numCols = headerRow ? headerRow.length : (filteredData.length > 0 ? filteredData[0].length : 0);
                             for (let i = 0; i < numCols; i++) {
                                 const td = newTab.document.createElement('td');
                                 totalRow.appendChild(td);
@@ -1367,6 +1761,97 @@
 
             const months = data.map((d) => getMonthName(d.month, lang));
 
+            const categoryConfigs = {
+                'MX_RB': [ { en: 'MX RUBBER', zh: '混練膠料報廢', key: 'mxRubber' } ],
+                'MX_CB': [ { en: 'MX CB', zh: '混練碳煙報廢', key: 'mxCbRubber' } ],
+                'MX_CHM': [ { en: 'MX CHM', zh: '混練藥品報廢', key: 'mxChmRubber' } ],
+                'CL_PLY': [ { en: 'CL PLY', zh: '上膠簾布報廢', key: 'clPlyRubber' } ],
+                'CL_FABRIC': [ { en: 'CL FABRIC', zh: '上膠原紗報廢', key: 'clFabricRubber' } ],
+                'CL_RB': [ { en: 'CL RB', zh: '上膠膠料報廢', key: 'clRbRubber' } ],
+                'CL_CH': [ { en: 'CL CH', zh: '上膠防擦布報廢', key: 'clChRubber' } ],
+                'CT_CH': [ { en: 'CT CH', zh: '裁斷防擦布報廢', key: 'ctChRubber' } ],
+                'CT_RB': [ { en: 'CT RB', zh: '裁斷膠料報廢', key: 'ctRbRubber' } ],
+                'CT_PLY': [ { en: 'CT PLY', zh: '裁斷簾布報廢', key: 'ctPlyRubber' } ],
+                'CT_BW': [ { en: 'CT BW', zh: '裁斷鋼絲報廢', key: 'ctBwRubber' } ],
+                'BD_RB': [ { en: 'BD RB', zh: '成型膠料報廢', key: 'bdRbRubber' } ],
+                'BD_PLY': [ { en: 'BD PLY', zh: '成型簾布報廢', key: 'bdPlyRubber' } ],
+                'BD_CH': [ { en: 'BD CH', zh: '成型防擦布報廢', key: 'bdChRubber' } ],
+                'BD_BW': [ { en: 'BD BW', zh: '成型鋼絲報廢', key: 'bdBwRubber' } ],
+                'CUR_RB': [ { en: 'CUR RUBBER', zh: '加硫膠料報廢', key: 'curingRubber' } ],
+                'RSIP_RB': [ { en: 'RSIP RB', zh: '膠檢膠料報廢', key: 'rispRubber' } ],
+                'RSIP_PLY': [ { en: 'RSIP PLY', zh: '膠檢簾布報廢', key: 'rispPlyRubber' } ],
+                'RSIP_CH': [ { en: 'RSIP CH', zh: '膠檢防擦布報廢', key: 'rispChRubber' } ],
+                'EX_RB': [ { en: 'EX RUBBER', zh: '押出膠料報廢', key: 'exRubber' } ],
+                'RUBBER ALL': [
+                    { en: 'MX RUBBER', zh: '混練膠料報廢', key: 'mxRubber' },
+                    { en: 'EX RUBBER', zh: '押出膠料報廢', key: 'exRubber' },
+                    { en: 'CT RUBBER', zh: '裁斷膠料報廢', key: 'ctRubber' },
+                    { en: 'CL RUBBER', zh: '上膠膠料報廢', key: 'clRubber' },
+                    { en: 'CUR RUBBER', zh: '加硫膠料報廢', key: 'curingRubber' },
+                    { en: 'RISP RUBBER', zh: '膠檢膠料報廢', key: 'rispRubber' }
+                ],
+                'PLY ALL': [
+                    { en: 'CL PLY', zh: '上膠簾布報廢', key: 'clPlyRubber' },
+                    { en: 'CT PLY', zh: '裁斷簾布報廢', key: 'ctPlyRubber' },
+                    { en: 'BD PLY', zh: '成型簾布報廢', key: 'bdPlyRubber' },
+                    { en: 'RISP PLY', zh: '膠檢簾布報廢', key: 'rispPlyRubber' }
+                ],
+                'BW ALL': [
+                    { en: 'CT BW', zh: '裁斷鋼絲報廢', key: 'ctBwRubber' },
+                    { en: 'BD BW', zh: '成型鋼絲報廢', key: 'bdBwRubber' }
+                ],
+                'CH ALL': [
+                    { en: 'CL CH', zh: '上膠防擦布報廢', key: 'clChRubber' },
+                    { en: 'CT CH', zh: '裁斷防擦布報廢', key: 'ctChRubber' },
+                    { en: 'BD CH', zh: '成型防擦布報廢', key: 'bdChRubber' },
+                    { en: 'RSIP CH', zh: '膠檢防擦布報廢', key: 'rispChRubber' }
+                ],
+                'PLY/CH ALL': [
+                    { en: 'CL PLY', zh: '上膠簾布報廢', key: 'clPlyRubber' },
+                    { en: 'CT PLY', zh: '裁斷簾布報廢', key: 'ctPlyRubber' },
+                    { en: 'BD PLY', zh: '成型簾布報廢', key: 'bdPlyRubber' },
+                    { en: 'RISP PLY', zh: '膠檢簾布報廢', key: 'rispPlyRubber' },
+                    { en: 'TOTAL PLY SCRAP Weight', zh: '簾布總報廢重量', key: 'totalPlyScrapWeight', className: "bg-blue-50 font-semibold" },
+                    { en: 'CL CH', zh: '上膠防擦布報廢', key: 'clChRubber' },
+                    { en: 'CT CH', zh: '裁斷防擦布報廢', key: 'ctChRubber' },
+                    { en: 'BD CH', zh: '成型防擦布報廢', key: 'bdChRubber' },
+                    { en: 'RSIP CH', zh: '膠檢防擦布報廢', key: 'rispChRubber' },
+                    { en: 'TOTAL CHAFERS SCRAP Weight', zh: '防擦布總報廢重量', key: 'totalChScrapWeight', className: "bg-blue-50 font-semibold" }
+                ],
+                'CT_CL PLY/CH ALL': [
+                    { en: 'CL PLY', zh: '上膠簾布報廢', key: 'clPlyRubber' },
+                    { en: 'CT PLY', zh: '裁斷簾布報廢', key: 'ctPlyRubber' },
+                    { en: 'TOTAL PLY SCRAP Weight', zh: '裁斷/上膠簾布總報廢重量', key: 'ctClTotalPlyScrapWeight', className: "bg-blue-50 font-semibold" },
+                    { en: 'CL CH', zh: '上膠防擦布報廢', key: 'clChRubber' },
+                    { en: 'CT CH', zh: '裁斷防擦布報廢', key: 'ctChRubber' },
+                    { en: 'TOTAL CHAFERS SCRAP Weight', zh: '裁斷/上膠防擦布總報廢重量', key: 'ctClTotalChScrapWeight', className: "bg-blue-50 font-semibold" }
+                ]
+            };
+
+            const currentConfig = categoryConfigs[category] || categoryConfigs['RUBBER ALL'];
+            
+            const dynamicRows = [];
+            currentConfig.forEach(item => {
+                dynamicRows.push({
+                    labelEn: `${primaryYear}_${item.en}`,
+                    labelZh: `${primaryYear} ${item.zh}`,
+                    getValue: (d) => d.data[primaryYear]?.[item.key],
+                    formatter: formatNumber,
+                    className: item.className,
+                    year: primaryYear,
+                    baseKey: item.key,
+                });
+                dynamicRows.push({
+                    labelEn: `${compareYear}_${item.en}`,
+                    labelZh: `${compareYear} ${item.zh}`,
+                    getValue: (d) => d.data[compareYear]?.[item.key],
+                    formatter: formatNumber,
+                    className: item.className,
+                    year: compareYear,
+                    baseKey: item.key,
+                });
+            });
+
             const rows = [
                 {
                     labelEn: `${primaryYear}_TOTAL Production Weight`,
@@ -1374,6 +1859,7 @@
                     getValue: (d) => d.data[primaryYear]?.prodWeight,
                     formatter: formatNumber,
                     year: primaryYear,
+                    baseKey: 'prodWeight',
                 },
                 {
                     labelEn: `${compareYear}_TOTAL Production Weight`,
@@ -1381,451 +1867,9 @@
                     getValue: (d) => d.data[compareYear]?.prodWeight,
                     formatter: formatNumber,
                     year: compareYear,
+                    baseKey: 'prodWeight',
                 },
-                ...(category === 'MX_RB' ? [
-                    {
-                        labelEn: `${primaryYear}_MX RUBBER`,
-                        labelZh: `${primaryYear} 混練膠料報廢`,
-                        getValue: (d) => d.data[primaryYear]?.mxRubber,
-                        formatter: formatNumber,
-                        year: primaryYear,
-                    }
-                ] : []),
-                ...(category === 'MX_CB' ? [
-                    {
-                        labelEn: `${primaryYear}_MX CB`,
-                        labelZh: `${primaryYear} 混練碳煙報廢`,
-                        getValue: (d) => d.data[primaryYear]?.mxCbRubber,
-                        formatter: formatNumber,
-                        year: primaryYear,
-                    }
-                ] : []),
-                ...(category === 'MX_CHM' ? [
-                    {
-                        labelEn: `${primaryYear}_MX CHM`,
-                        labelZh: `${primaryYear} 混練藥品報廢`,
-                        getValue: (d) => d.data[primaryYear]?.mxChmRubber,
-                        formatter: formatNumber,
-                        year: primaryYear,
-                    }
-                ] : []),
-                ...(category === 'CL_PLY' ? [
-                    {
-                        labelEn: `${primaryYear}_CL PLY`,
-                        labelZh: `${primaryYear} 上膠簾布報廢`,
-                        getValue: (d) => d.data[primaryYear]?.clPlyRubber,
-                        formatter: formatNumber,
-                        year: primaryYear,
-                    }
-                ] : []),
-                ...(category === 'CL_FABRIC' ? [
-                    {
-                        labelEn: `${primaryYear}_CL FABRIC`,
-                        labelZh: `${primaryYear} 上膠原紗報廢`,
-                        getValue: (d) => d.data[primaryYear]?.clFabricRubber,
-                        formatter: formatNumber,
-                        year: primaryYear,
-                    }
-                ] : []),
-                ...(category === 'CL_RB' ? [
-                    {
-                        labelEn: `${primaryYear}_CL RB`,
-                        labelZh: `${primaryYear} 上膠膠料報廢`,
-                        getValue: (d) => d.data[primaryYear]?.clRbRubber,
-                        formatter: formatNumber,
-                        year: primaryYear,
-                    }
-                ] : []),
-                ...(category === 'CL_CH' ? [
-                    {
-                        labelEn: `${primaryYear}_CL CH`,
-                        labelZh: `${primaryYear} 上膠防擦布報廢`,
-                        getValue: (d) => d.data[primaryYear]?.clChRubber,
-                        formatter: formatNumber,
-                        year: primaryYear,
-                    }
-                ] : []),
-                ...(category === 'CT_CH' ? [
-                    {
-                        labelEn: `${primaryYear}_CT CH`,
-                        labelZh: `${primaryYear} 裁斷防擦布報廢`,
-                        getValue: (d) => d.data[primaryYear]?.ctChRubber,
-                        formatter: formatNumber,
-                        year: primaryYear,
-                    }
-                ] : []),
-                ...(category === 'CT_RB' ? [
-                    {
-                        labelEn: `${primaryYear}_CT RB`,
-                        labelZh: `${primaryYear} 裁斷防擦布報廢`,
-                        getValue: (d) => d.data[primaryYear]?.ctRbRubber,
-                        formatter: formatNumber,
-                        year: primaryYear,
-                    }
-                ] : []),
-                ...(category === 'CT_PLY' ? [
-                    {
-                        labelEn: `${primaryYear}_CT PLY`,
-                        labelZh: `${primaryYear} 裁斷簾布報廢`,
-                        getValue: (d) => d.data[primaryYear]?.ctPlyRubber,
-                        formatter: formatNumber,
-                        year: primaryYear,
-                    }
-                ] : []),
-                ...(category === 'CT_BW' ? [
-                    {
-                        labelEn: `${primaryYear}_CT BW`,
-                        labelZh: `${primaryYear} 裁斷鋼絲報廢`,
-                        getValue: (d) => d.data[primaryYear]?.ctBwRubber,
-                        formatter: formatNumber,
-                        year: primaryYear,
-                    }
-                ] : []),
-                ...(category === 'BD_RB' ? [
-                    {
-                        labelEn: `${primaryYear}_BD RB`,
-                        labelZh: `${primaryYear} 成型膠料報廢`,
-                        getValue: (d) => d.data[primaryYear]?.bdRbRubber,
-                        formatter: formatNumber,
-                        year: primaryYear,
-                    }
-                ] : []),
-                ...(category === 'BD_PLY' ? [
-                    {
-                        labelEn: `${primaryYear}_BD PLY`,
-                        labelZh: `${primaryYear} 成型簾布報廢`,
-                        getValue: (d) => d.data[primaryYear]?.bdPlyRubber,
-                        formatter: formatNumber,
-                        year: primaryYear,
-                    }
-                ] : []),
-                ...(category === 'BD_CH' ? [
-                    {
-                        labelEn: `${primaryYear}_BD CH`,
-                        labelZh: `${primaryYear} 成型防擦布報廢`,
-                        getValue: (d) => d.data[primaryYear]?.bdChRubber,
-                        formatter: formatNumber,
-                        year: primaryYear,
-                    }
-                ] : []),
-                ...(category === 'BD_BW' ? [
-                    {
-                        labelEn: `${primaryYear}_BD BW`,
-                        labelZh: `${primaryYear} 成型鋼絲報廢`,
-                        getValue: (d) => d.data[primaryYear]?.bdBwRubber,
-                        formatter: formatNumber,
-                        year: primaryYear,
-                    }
-                ] : []),
-                ...(category === 'RSIP_RB' ? [
-                    {
-                        labelEn: `${primaryYear}_RSIP RB`,
-                        labelZh: `${primaryYear} 膠檢膠料報廢`,
-                        getValue: (d) => d.data[primaryYear]?.rispRubber,
-                        formatter: formatNumber,
-                        year: primaryYear,
-                    }
-                ] : []),
-                ...(category === 'RSIP_PLY' ? [
-                    {
-                        labelEn: `${primaryYear}_RSIP PLY`,
-                        labelZh: `${primaryYear} 膠檢簾布報廢`,
-                        getValue: (d) => d.data[primaryYear]?.rispPlyRubber,
-                        formatter: formatNumber,
-                        year: primaryYear,
-                    }
-                ] : []),
-                ...(category === 'RSIP_CH' ? [
-                    {
-                        labelEn: `${primaryYear}_RSIP CH`,
-                        labelZh: `${primaryYear} 膠檢防擦布報廢`,
-                        getValue: (d) => d.data[primaryYear]?.rispChRubber,
-                        formatter: formatNumber,
-                        year: primaryYear,
-                    }
-                ] : []),
-                ...(category === 'EX_RB' ? [
-                    {
-                        labelEn: `${primaryYear}_EX RUBBER`,
-                        labelZh: `${primaryYear} 押出膠料報廢`,
-                        getValue: (d) => d.data[primaryYear]?.exRubber,
-                        formatter: formatNumber,
-                        year: primaryYear,
-                    }
-                ] : []),
-                ...(category === 'RUBBER ALL' ? [
-                    {
-                        labelEn: `${primaryYear}_MX RUBBER`,
-                        labelZh: `${primaryYear} 混練膠料報廢`,
-                        getValue: (d) => d.data[primaryYear]?.mxRubber,
-                        formatter: formatNumber,
-                        year: primaryYear,
-                    },
-                    {
-                        labelEn: `${primaryYear}_EX RUBBER`,
-                        labelZh: `${primaryYear} 押出膠料報廢`,
-                        getValue: (d) => d.data[primaryYear]?.exRubber,
-                        formatter: formatNumber,
-                        year: primaryYear,
-                    },
-                    {
-                        labelEn: `${primaryYear}_CL RUBBER`,
-                        labelZh: `${primaryYear} 上膠膠料報廢`,
-                        getValue: (d) => d.data[primaryYear]?.clRubber,
-                        formatter: formatNumber,
-                        year: primaryYear,
-                    },
-                    {
-                        labelEn: `${primaryYear}_CT RUBBER`,
-                        labelZh: `${primaryYear} 裁斷膠料報廢`,
-                        getValue: (d) => d.data[primaryYear]?.ctRubber,
-                        formatter: formatNumber,
-                        year: primaryYear,
-                    },
-                    {
-                        labelEn: `${primaryYear}_CURING RUBBER`,
-                        labelZh: `${primaryYear} 加硫膠料報廢`,
-                        getValue: (d) => d.data[primaryYear]?.curingRubber,
-                        formatter: formatNumber,
-                        year: primaryYear,
-                    },
-                    {
-                        labelEn: `${primaryYear}_RISP RUBBER`,
-                        labelZh: `${primaryYear} 膠檢膠料報廢`,
-                        getValue: (d) => d.data[primaryYear]?.rispRubber,
-                        formatter: formatNumber,
-                        year: primaryYear,
-                    }
-                ] : []),
-                ...(category === 'PLY ALL' ? [
-                    {
-                        labelEn: `${primaryYear}_EX PLY`,
-                        labelZh: `${primaryYear} 押出簾布報廢`,
-                        getValue: (d) => d.data[primaryYear]?.exPlyRubber,
-                        formatter: formatNumber,
-                        year: primaryYear,
-                    },
-                    {
-                        labelEn: `${primaryYear}_CL PLY`,
-                        labelZh: `${primaryYear} 上膠簾布報廢`,
-                        getValue: (d) => d.data[primaryYear]?.clPlyRubber,
-                        formatter: formatNumber,
-                        year: primaryYear,
-                    },
-                    {
-                        labelEn: `${primaryYear}_CT PLY`,
-                        labelZh: `${primaryYear} 裁斷簾布報廢`,
-                        getValue: (d) => d.data[primaryYear]?.ctPlyRubber,
-                        formatter: formatNumber,
-                        year: primaryYear,
-                    },
-                    {
-                        labelEn: `${primaryYear}_BD PLY`,
-                        labelZh: `${primaryYear} 成型簾布報廢`,
-                        getValue: (d) => d.data[primaryYear]?.bdPlyRubber,
-                        formatter: formatNumber,
-                        year: primaryYear,
-                    },
-                    {
-                        labelEn: `${primaryYear}_RISP PLY`,
-                        labelZh: `${primaryYear} 膠檢簾布報廢`,
-                        getValue: (d) => d.data[primaryYear]?.rispPlyRubber,
-                        formatter: formatNumber,
-                        year: primaryYear,
-                    }
-                ] : []),
-                ...(category === 'BW ALL' ? [
-                    {
-                        labelEn: `${primaryYear}_CT BW`,
-                        labelZh: `${primaryYear} 裁斷鋼絲報廢`,
-                        getValue: (d) => d.data[primaryYear]?.ctBwRubber,
-                        formatter: formatNumber,
-                        year: primaryYear,
-                    },
-                    {
-                        labelEn: `${primaryYear}_BD BW`,
-                        labelZh: `${primaryYear} 成型鋼絲報廢`,
-                        getValue: (d) => d.data[primaryYear]?.bdBwRubber,
-                        formatter: formatNumber,
-                        year: primaryYear,
-                    },
-                    {
-                        labelEn: `${primaryYear}_RSIP BW`,
-                        labelZh: `${primaryYear} 膠檢鋼絲報廢`,
-                        getValue: (d) => d.data[primaryYear]?.rsipBwRubber,
-                        formatter: formatNumber,
-                        year: primaryYear,
-                    }
-                ] : []),
-                ...(category === 'CH ALL' ? [
-                    {
-                        labelEn: `${primaryYear}_CL CH`,
-                        labelZh: `${primaryYear} 上膠防擦布報廢`,
-                        getValue: (d) => d.data[primaryYear]?.clChRubber,
-                        formatter: formatNumber,
-                        year: primaryYear,
-                    },
-                    {
-                        labelEn: `${primaryYear}_CT CH`,
-                        labelZh: `${primaryYear} 裁斷防擦布報廢`,
-                        getValue: (d) => d.data[primaryYear]?.ctChRubber,
-                        formatter: formatNumber,
-                        year: primaryYear,
-                    },
-                    {
-                        labelEn: `${primaryYear}_BD CH`,
-                        labelZh: `${primaryYear} 成型防擦布報廢`,
-                        getValue: (d) => d.data[primaryYear]?.bdChRubber,
-                        formatter: formatNumber,
-                        year: primaryYear,
-                    },
-                    {
-                        labelEn: `${primaryYear}_RSIP CH`,
-                        labelZh: `${primaryYear} 膠檢防擦布報廢`,
-                        getValue: (d) => d.data[primaryYear]?.rispChRubber,
-                        formatter: formatNumber,
-                        year: primaryYear,
-                    }
-                ] : []),
-                ...(category === 'PLY/CH ALL' ? [
-                    {
-                        labelEn: `${primaryYear}_EX PLY`,
-                        labelZh: `${primaryYear} 押出簾布報廢`,
-                        getValue: (d) => d.data[primaryYear]?.exPlyRubber,
-                        formatter: formatNumber,
-                        year: primaryYear,
-                    },
-                    {
-                        labelEn: `${primaryYear}_CL PLY`,
-                        labelZh: `${primaryYear} 上膠簾布報廢`,
-                        getValue: (d) => d.data[primaryYear]?.clPlyRubber,
-                        formatter: formatNumber,
-                        year: primaryYear,
-                    },
-                    {
-                        labelEn: `${primaryYear}_CT PLY`,
-                        labelZh: `${primaryYear} 裁斷簾布報廢`,
-                        getValue: (d) => d.data[primaryYear]?.ctPlyRubber,
-                        formatter: formatNumber,
-                        year: primaryYear,
-                    },
-                    {
-                        labelEn: `${primaryYear}_BD PLY`,
-                        labelZh: `${primaryYear} 成型簾布報廢`,
-                        getValue: (d) => d.data[primaryYear]?.bdPlyRubber,
-                        formatter: formatNumber,
-                        year: primaryYear,
-                    },
-                    {
-                        labelEn: `${primaryYear}_RISP PLY`,
-                        labelZh: `${primaryYear} 膠檢簾布報廢`,
-                        getValue: (d) => d.data[primaryYear]?.rispPlyRubber,
-                        formatter: formatNumber,
-                        year: primaryYear,
-                    },
-                    {
-                        labelEn: `${primaryYear}_TOTAL PLY SCRAP Weight`,
-                        labelZh: `${primaryYear} 簾布總報廢重量`,
-                        getValue: (d) => d.data[primaryYear]?.totalPlyScrapWeight,
-                        formatter: formatNumber,
-                        className: "bg-blue-50 font-semibold",
-                        year: primaryYear,
-                    },
-                    {
-                        labelEn: `${compareYear}_TOTAL PLY SCRAP Weight`,
-                        labelZh: `${compareYear} 簾布總報廢重量`,
-                        getValue: (d) => d.data[compareYear]?.totalPlyScrapWeight,
-                        formatter: formatNumber,
-                        year: compareYear,
-                    },
-                    {
-                        labelEn: `${primaryYear}_CL CH`,
-                        labelZh: `${primaryYear} 上膠防擦布報廢`,
-                        getValue: (d) => d.data[primaryYear]?.clChRubber,
-                        formatter: formatNumber,
-                        year: primaryYear,
-                    },
-                    {
-                        labelEn: `${primaryYear}_CT CH`,
-                        labelZh: `${primaryYear} 裁斷防擦布報廢`,
-                        getValue: (d) => d.data[primaryYear]?.ctChRubber,
-                        formatter: formatNumber,
-                        year: primaryYear,
-                    },
-                    {
-                        labelEn: `${primaryYear}_BD CH`,
-                        labelZh: `${primaryYear} 成型防擦布報廢`,
-                        getValue: (d) => d.data[primaryYear]?.bdChRubber,
-                        formatter: formatNumber,
-                        year: primaryYear,
-                    },
-                    {
-                        labelEn: `${primaryYear}_RSIP CH`,
-                        labelZh: `${primaryYear} 膠檢防擦布報廢`,
-                        getValue: (d) => d.data[primaryYear]?.rispChRubber,
-                        formatter: formatNumber,
-                        year: primaryYear,
-                    },
-                    {
-                        labelEn: `${primaryYear}_TOTAL CHAFERS SCRAP Weight`,
-                        labelZh: `${primaryYear} 防擦布總報廢重量`,
-                        getValue: (d) => d.data[primaryYear]?.totalChScrapWeight,
-                        formatter: formatNumber,
-                        className: "bg-blue-50 font-semibold",
-                        year: primaryYear,
-                    },
-                    {
-                        labelEn: `${compareYear}_TOTAL CHAFERS SCRAP Weight`,
-                        labelZh: `${compareYear} 防擦布總報廢重量`,
-                        getValue: (d) => d.data[compareYear]?.totalChScrapWeight,
-                        formatter: formatNumber,
-                        year: compareYear,
-                    },
-                ] : []),
-                ...(!['MX_RB', 'EX_RB', 'MX_CB', 'MX_CHM', 'CL_PLY', 'CL_FABRIC', 'CL_RB', 'CL_CH', 'CT_CH', 'CT_RB', 'CT_PLY', 'CT_BW', 'BD_RB', 'BD_PLY', 'BD_CH', 'BD_BW', 'RUBBER ALL', 'PLY ALL', 'RSIP_RB', 'RSIP_PLY', 'RSIP_CH', 'RSIP_BW', 'BW ALL', 'CH ALL', 'PLY/CH ALL'].includes(category) ? [
-                    {
-                        labelEn: `${primaryYear}_MX RUBBER`,
-                        labelZh: `${primaryYear} 混練膠料報廢`,
-                        getValue: (d) => d.data[primaryYear]?.mxRubber,
-                        formatter: formatNumber,
-                        year: primaryYear,
-                    },
-                    {
-                        labelEn: `${primaryYear}_EX RUBBER`,
-                        labelZh: `${primaryYear} 押出膠料報廢`,
-                        getValue: (d) => d.data[primaryYear]?.exRubber,
-                        formatter: formatNumber,
-                        year: primaryYear,
-                    },
-                    {
-                        labelEn: `${primaryYear}_CT RUBBER`,
-                        labelZh: `${primaryYear} 裁斷膠料報廢`,
-                        getValue: (d) => d.data[primaryYear]?.ctRubber,
-                        formatter: formatNumber,
-                        year: primaryYear,
-                    },
-                    {
-                        labelEn: `${primaryYear}_CL RUBBER`,
-                        labelZh: `${primaryYear} 上膠膠料報廢`,
-                        getValue: (d) => d.data[primaryYear]?.clRubber,
-                        formatter: formatNumber,
-                        year: primaryYear,
-                    },
-                    {
-                        labelEn: `${primaryYear}_CURING RUBBER`,
-                        labelZh: `${primaryYear} 加硫膠料報廢`,
-                        getValue: (d) => d.data[primaryYear]?.curingRubber,
-                        formatter: formatNumber,
-                        year: primaryYear,
-                    },
-                    {
-                        labelEn: `${primaryYear}_RISP RUBBER`,
-                        labelZh: `${primaryYear} 膠檢膠料報廢`,
-                        getValue: (d) => d.data[primaryYear]?.rispRubber,
-                        formatter: formatNumber,
-                        year: primaryYear,
-                    }
-                ] : []),
+                ...dynamicRows,
                 {
                     labelEn: `${primaryYear}_TOTAL SCRAP Weight`,
                     labelZh: `${primaryYear} 總報廢重量`,
@@ -1833,6 +1877,7 @@
                     formatter: formatNumber,
                     className: "bg-[#00BFFF] text-black font-semibold",
                     year: primaryYear,
+                    baseKey: 'totalScrapWeight',
                 },
                 {
                     labelEn: `${compareYear}_TOTAL SCRAP Weight`,
@@ -1840,6 +1885,7 @@
                     getValue: (d) => d.data[compareYear]?.totalScrapWeight,
                     formatter: formatNumber,
                     year: compareYear,
+                    baseKey: 'totalScrapWeight',
                 },
                 {
                     labelEn: `${primaryYear}_TOTAL SCRAP RATIO`,
@@ -1848,6 +1894,7 @@
                     formatter: formatRatio,
                     className: "bg-[#00BFFF] text-black font-semibold",
                     year: primaryYear,
+                    baseKey: 'totalScrapRatio',
                 },
                 {
                     labelEn: `${compareYear}_TOTAL SCRAP RATIO`,
@@ -1855,24 +1902,102 @@
                     getValue: (d) => d.data[compareYear]?.totalScrapRatio,
                     formatter: formatRatio,
                     year: compareYear,
+                    baseKey: 'totalScrapRatio',
                 },
+                ...(scrapPercentYear !== 'No' ? [{
+                    labelEn: `${scrapPercentYear}_SCRAP RATIO (CSV)`,
+                    labelZh: `${scrapPercentYear} 報廢率 (CSV)`,
+                    getValue: (d) => {
+                        const rubberCats = ['RUBBER ALL', 'MX_RB', 'MX_CB', 'MX_CHM', 'CL_RB', 'EX_RB', 'CT_RB', 'BD_RB', 'CUR_RB', 'RSIP_RB'];
+                        const plyChCats = ['PLY ALL', 'CH ALL', 'PLY/CH ALL', 'CT_CL PLY/CH ALL', 'CL_PLY', 'CL_CH', 'CT_PLY', 'CT_CH', 'BD_PLY', 'BD_CH', 'RSIP_PLY', 'RSIP_CH', 'EX_PLY', 'CL_FABRIC'];
+                        const bwCats = ['BW ALL', 'CT_BW', 'BD_BW'];
+
+                        if (rubberCats.includes(category)) return d.data[scrapPercentYear]?.scrapPercentRubber;
+                        if (plyChCats.includes(category)) return d.data[scrapPercentYear]?.scrapPercentPlyChafer;
+                        if (bwCats.includes(category)) return d.data[scrapPercentYear]?.scrapPercentBW;
+                        return null;
+                    },
+                    formatter: formatRatio,
+                    className: "bg-[#FFD700] text-black font-semibold",
+                    year: scrapPercentYear,
+                    baseKey: 'totalScrapRatio',
+                }] : []),
             ];
 
+            const filteredRows = rows.filter(row => {
+                const sum = data.reduce((acc, d) => {
+                    const val = row.getValue(d);
+                    return acc + (typeof val === 'number' ? val : 0);
+                }, 0);
+                if (row.labelEn.toUpperCase().includes('TOTAL')) return true;
+                return sum !== 0;
+            });
+
             return (
-                <div className={`w-full mobile-scale-container ${isCapturing ? 'h-auto overflow-visible' : 'h-full overflow-auto'}`}>
-                    <table className="w-full text-xs sm:text-sm border-collapse table-auto">
-                        <thead className={isCapturing ? "" : "sticky top-0 z-10"}>
-                            <tr className="bg-[#90EE90] shadow-sm">
-                                <th className={cn(
-                                    "border border-gray-300 p-0.5 sm:p-3 text-left font-bold text-xs sm:text-lg min-w-[100px] sm:min-w-[200px] bg-[#90EE90] z-20",
-                                    isCapturing ? "" : "sticky left-0"
-                                )}>
+                <div 
+                    onDoubleClick={() => copyElementAsImage(tableRef.current, lang, setIsCapturing)}
+                    title={lang === 'zh' ? '雙擊複製資料表' : 'Double click to copy table'}
+                    className={`w-full mobile-scale-container cursor-pointer ${isCapturing ? 'h-auto overflow-visible' : 'h-full overflow-auto'}`}
+                >
+                    <div ref={tableRef} className="bg-white">
+                        {isCapturing && (
+                            <div className="p-4 border-b-2 border-gray-300 bg-gray-50/50">
+                                <h2 className="text-lg font-bold text-gray-900">
+                                    {compareYear}{lang === 'zh' ? '年' : ''}/{primaryYear}{lang === 'zh' ? '年' : ''} {lang === 'zh' ? (categoryNamesZh[category] || category) : (categoryNamesEn[category] || category)} {t.tableTitle}
+                                </h2>
+                            </div>
+                        )}
+                        <table className="w-full text-xs sm:text-sm border-collapse table-fixed bg-white">
+                            <thead>
+                                <tr className="bg-[#90EE90] shadow-sm">
+                                    {isEditMode && (
+                                        <th 
+                                            className={cn(
+                                                "border border-gray-300 w-10 bg-[#90EE90] z-30 cursor-pointer hover:bg-green-200 transition-colors",
+                                                isCapturing ? "" : "sticky left-0"
+                                            )}
+                                        title={lang === 'zh' ? '全選' : 'Select All'}
+                                        onClick={(e) => {
+                                            const allIds = [];
+                                            filteredRows.forEach(r => {
+                                                allIds.push(`label-${r.baseKey}-${r.year}`);
+                                                data.forEach(d => allIds.push(`${r.labelEn}-${d.month}`));
+                                            });
+                                            onCellClick(e, 'all-cells', tableFontSize, allIds);
+                                        }}
+                                    >
+                                        <div className="flex items-center justify-center">
+                                            <svg className="w-4 h-4 text-green-800" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4"></path>
+                                            </svg>
+                                        </div>
+                                    </th>
+                                )}
+                                <th 
+                                    className={cn(
+                                        "border border-gray-300 p-0.5 sm:p-2 text-left font-bold bg-[#90EE90] z-20",
+                                        isCapturing ? "" : "sticky",
+                                        !isCapturing && isEditMode ? "left-10" : "left-0"
+                                    )}
+                                    style={{ fontSize: `${tableFontSize + 2}px`, width: isCapturing ? '215px' : '175px' }}
+                                >
                                     {t.months}
                                 </th>
                                 {months.map((month) => (
                                     <th
                                         key={month}
-                                        className="border border-gray-300 p-0.5 sm:p-3 text-center font-medium text-[10px] sm:text-sm whitespace-nowrap"
+                                        className={cn(
+                                            "border border-gray-300 p-0.5 sm:p-2 text-center font-medium transition-colors",
+                                            isEditMode ? "cursor-pointer hover:bg-green-200" : ""
+                                        )}
+                                        style={{ fontSize: `${tableFontSize}px`, width: isCapturing ? '67px' : '62px' }}
+                                        onClick={(e) => {
+                                            if (isEditMode) {
+                                                const columnIds = filteredRows.map(r => `${r.labelEn}-${month}`);
+                                                onCellClick(e, `col-${month}`, tableFontSize, columnIds);
+                                            }
+                                        }}
+                                        title={isEditMode ? (lang === 'zh' ? `選取 ${month} 整欄` : `Select all ${month}`) : ""}
                                     >
                                         {month}
                                     </th>
@@ -1880,19 +2005,74 @@
                             </tr>
                         </thead>
                         <tbody>
-                            {rows.map((row, idx) => {
-                                const isCompareRow = row.labelEn.startsWith(compareYear);
+                            {filteredRows.map((row, idx) => {
+                                const isCompareRow = row.year === compareYear;
+                                const hasPrimaryRow = filteredRows.some(r => r.baseKey === row.baseKey && r.year === primaryYear);
+                                const isExpanded = expandedRows[row.baseKey];
+                                
+                                if (isCompareRow && hasPrimaryRow && !isExpanded) {
+                                    return null;
+                                }
+
+                                const labelId = `label-${row.baseKey}-${row.year}`;
+                                const labelStyle = pointStyles[labelId] || {};
+                                const labelFontSize = labelStyle.fontSize || tableFontSize;
+                                
+                                const rowCellIds = data.map(d => `${row.labelEn}-${d.month}`);
+                                const allRowIds = [labelId, ...rowCellIds];
+
                                 return (
-                                    <tr key={idx} className={`transition-colors ${isCompareRow ? 'bg-orange-50 hover:bg-orange-100' : 'bg-white hover:bg-gray-50'}`}>
+                                    <tr key={idx} className={`h-10 sm:h-12 transition-colors ${isCompareRow ? 'bg-orange-50 hover:bg-orange-100' : 'bg-white hover:bg-gray-50'}`}>
+                                        {isEditMode && (
+                                            <td 
+                                                className={cn(
+                                                    "border border-gray-300 w-10 bg-gray-50 z-20 cursor-pointer hover:bg-blue-100 transition-colors text-center",
+                                                    isCapturing ? "" : "sticky left-0"
+                                                )}
+                                                onClick={(e) => {
+                                                    onCellClick(e, `row-selector-${idx}`, tableFontSize, allRowIds);
+                                                }}
+                                                title={lang === 'zh' ? '選取整列' : 'Select Row'}
+                                            >
+                                                <div className="flex items-center justify-center">
+                                                    <svg className="w-3 h-3 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 5l7 7-7 7M5 5l7 7-7 7"></path>
+                                                    </svg>
+                                                </div>
+                                            </td>
+                                        )}
                                         <td
                                             className={cn(
-                                                "border border-gray-300 p-0.5 sm:p-3 whitespace-nowrap text-[8px] sm:text-xs",
+                                                "border border-gray-300 whitespace-nowrap transition-all",
+                                                isCapturing ? "" : "overflow-hidden",
                                                 row.className,
-                                                isCompareRow ? 'bg-orange-50' : 'bg-white',
-                                                isCapturing ? "" : "sticky left-0 z-10"
+                                                isCompareRow ? 'bg-orange-50' : 'bg-white cursor-pointer hover:bg-gray-100',
+                                                isCapturing ? "" : "sticky z-10",
+                                                !isCapturing && isEditMode ? "left-10" : "left-0",
+                                                selectedCells.includes(labelId) ? "ring-2 ring-blue-500 ring-inset bg-blue-50" : ""
                                             )}
+                                            style={{ fontSize: `${labelFontSize}px` }}
+                                            onClick={(e) => {
+                                                if (isEditMode) {
+                                                    onCellClick(e, labelId, labelFontSize);
+                                                } else {
+                                                    if (!isCompareRow || !hasPrimaryRow) {
+                                                        toggleRow(row.baseKey);
+                                                    }
+                                                }
+                                            }}
+                                            onContextMenu={(e) => {
+                                                e.preventDefault();
+                                                onCellClick(e, labelId, labelFontSize);
+                                            }}
+                                            title={lang === 'en' ? row.labelEn : row.labelZh}
                                         >
-                                            {lang === 'en' ? row.labelEn : row.labelZh}
+                                            <div className={cn(
+                                                "flex items-center justify-start h-full w-full px-1 sm:px-3",
+                                                isCapturing ? "" : "overflow-hidden"
+                                            )}>
+                                                <span className={isCapturing ? "" : "truncate"}>{lang === 'en' ? row.labelEn : row.labelZh}</span>
+                                            </div>
                                         </td>
                                         {data.map((d, colIdx) => {
                                             const isHighlighted = row.className?.includes("bg-[#00BFFF]");
@@ -1900,39 +2080,48 @@
                                             const formattedValue = row.formatter(cellValue);
                                             // Use unique ID for each cell to ensure single cell highlighting
                                             const pointId = `${row.labelEn}-${d.month}`;
-                                            const isRed = pointStyles && pointStyles[pointId]?.isRed;
-
-                                            // Dynamic font size based on length for mobile
-                                            const getFontSize = (val) => {
-                                                const s = String(val);
-                                                if (s.length > 10) return 'text-[6px]';
-                                                if (s.length > 8) return 'text-[7px]';
-                                                return 'text-[8px]';
-                                            };
+                                            const cellStyle = pointStyles[pointId] || {};
+                                            const isRed = cellStyle.isRed;
+                                            const cellFontSize = cellStyle.fontSize || tableFontSize;
 
                                             return (
                                                 <td
                                                     key={d.month}
                                                     className={cn(
-                                                        "border border-gray-300 p-0.5 sm:p-3 text-center sm:text-sm whitespace-nowrap cursor-pointer",
-                                                        getFontSize(formattedValue),
+                                                        "border border-gray-300 text-center whitespace-nowrap cursor-pointer transition-all",
+                                                        isCapturing ? "" : "overflow-hidden",
                                                         isHighlighted ? "bg-[#00BFFF]/20 text-blue-900 font-semibold" : "text-gray-700",
-                                                        isRed ? "!bg-red-500 !text-white" : ""
+                                                        isRed ? "!bg-red-500 !text-white" : "",
+                                                        selectedCells.includes(pointId) ? "ring-2 ring-blue-500 ring-inset !bg-blue-50 !text-blue-900" : ""
                                                     )}
+                                                    style={{ fontSize: `${cellFontSize}px` }}
                                                     onClick={(e) => {
-                                                        handleCellClick(pointId);
-                                                        fetchAndShowDetails(row.labelEn, row.labelZh, d.month);
+                                                        if (isEditMode) {
+                                                            onCellClick(e, pointId, cellFontSize);
+                                                        } else {
+                                                            fetchAndShowDetails(row.labelEn, row.labelZh, d.month);
+                                                        }
                                                     }}
+                                                    title={formattedValue}
                                                 >
-                                                    {formattedValue}
+                                                    <div className={cn(
+                                                        "flex items-center justify-center h-full w-full px-0.5 sm:px-1",
+                                                        isCapturing ? "" : "overflow-hidden"
+                                                    )}>
+                                                        <span className={cn(
+                                                            "leading-none",
+                                                            isCapturing ? "" : "truncate"
+                                                        )}>{formattedValue}</span>
+                                                    </div>
                                                 </td>
                                             );
                                         })}
                                     </tr>
                                 );
                             })}
-                        </tbody>
-                    </table>
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
             );
         };
@@ -1946,18 +2135,93 @@
             const [category, setCategory] = useState('RUBBER ALL');
             const [primaryYear, setPrimaryYear] = useState(currentYear);
             const [compareYear, setCompareYear] = useState(prevYear);
+            const [scrapPercentYear, setScrapPercentYear] = useState('No');
             const [chartType, setChartType] = useState('ratio');
             const [chartData, setChartData] = useState(fallbackData);
             const [loading, setLoading] = useState(false);
             const [isCapturing, setIsCapturing] = useState(false);
-            const [pointStyles, setPointStyles] = useState({});
+            const [pointStyles, setPointStyles] = useState(() => {
+                const saved = localStorage.getItem('tablePointStyles');
+                return saved ? JSON.parse(saved) : {};
+            });
+            const [selectedCells, setSelectedCells] = useState([]);
+            const [expandedRows, setExpandedRows] = useState(() => {
+                const saved = localStorage.getItem('tableExpandedRows');
+                return saved ? JSON.parse(saved) : { prodWeight: true, totalScrapWeight: true, totalScrapRatio: true };
+            });
+            useEffect(() => {
+                localStorage.setItem('tableExpandedRows', JSON.stringify(expandedRows));
+            }, [expandedRows]);
+            const [tableFontSize, setTableFontSize] = useState(() => {
+                const saved = localStorage.getItem('tableGlobalFontSize');
+                return saved ? parseInt(saved) : 14;
+            });
+            useEffect(() => {
+                localStorage.setItem('tableGlobalFontSize', tableFontSize.toString());
+            }, [tableFontSize]);
+            const [isEditMode, setIsEditMode] = useState(false);
+            const [editingCell, setEditingCell] = useState(null);
+            const [editorPosition, setEditorPosition] = useState({ x: 0, y: 0 });
+            const [isDragging, setIsDragging] = useState(false);
+            const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
+            const [isLocked, setIsLocked] = useState(false);
             const captureRef = useRef(null);
+
+            // Handle dragging of the floating editor
+            useEffect(() => {
+                const handleMouseMove = (e) => {
+                    if (isDragging) {
+                        setEditorPosition({
+                            x: e.clientX - dragOffset.x,
+                            y: e.clientY - dragOffset.y
+                        });
+                    }
+                };
+
+                const handleMouseUp = () => {
+                    setIsDragging(false);
+                };
+
+                if (isDragging) {
+                    window.addEventListener('mousemove', handleMouseMove);
+                    window.addEventListener('mouseup', handleMouseUp);
+                }
+
+                return () => {
+                    window.removeEventListener('mousemove', handleMouseMove);
+                    window.removeEventListener('mouseup', handleMouseUp);
+                };
+            }, [isDragging, dragOffset]);
+
+            // Reset editor position when a new cell is selected
+            useEffect(() => {
+                if (editingCell && !isLocked) {
+                    setEditorPosition({
+                        x: Math.min(window.innerWidth - 220, Math.max(10, editingCell.x + editingCell.width / 2 - 100)),
+                        y: Math.min(window.innerHeight - 150, Math.max(10, editingCell.y - 120))
+                    });
+                }
+            }, [editingCell?.id, isLocked]);
+
+            // Persist pointStyles to localStorage
+            useEffect(() => {
+                localStorage.setItem('tablePointStyles', JSON.stringify(pointStyles));
+            }, [pointStyles]);
+
+            // Clear selection when leaving edit mode
+            useEffect(() => {
+                if (!isEditMode) {
+                    setSelectedCells([]);
+                    setEditingCell(null);
+                }
+            }, [isEditMode]);
             
             const t = translations[lang];
 
-            useEffect(() => {
-                setPointStyles({});
-            }, [category]);
+            // Removed reset of pointStyles on category change to persist font sizes across categories
+            // useEffect(() => {
+            //     setPointStyles({});
+            // }, [category]);
 
             const handleScreenshot = async () => {
                 if (!captureRef.current) return;
@@ -1965,7 +2229,7 @@
                 
                 try {
                     // Wait for React to apply the desktop-width classes and Recharts to resize
-                    await new Promise(resolve => setTimeout(resolve, 800));
+                    await new Promise(resolve => setTimeout(resolve, 1500));
                     
                     const canvas = await html2canvas(captureRef.current, {
                         scale: 2,
@@ -2005,15 +2269,35 @@
 
                 } catch (err) {
                     console.error("Screenshot failed", err);
-                    alert(lang === 'zh' ? "截圖失敗，請確保視窗處於焦點狀態並重試。" : "Screenshot failed. Please ensure the window is focused and try again.");
+                    // alert(lang === 'zh' ? "截圖失敗，請確保視窗處於焦點狀態並重試。" : "Screenshot failed. Please ensure the window is focused and try again.");
                 } finally {
                     setIsCapturing(false);
                 }
             };
 
+            const handleClearCache = () => {
+                // Clear storage
+                try {
+                    localStorage.clear();
+                    sessionStorage.clear();
+                } catch (e) {}
+                
+                // Unregister service workers
+                if ('serviceWorker' in navigator) {
+                    navigator.serviceWorker.getRegistrations().then(function(registrations) {
+                        for(let registration of registrations) {
+                            registration.unregister();
+                        }
+                    });
+                }
+                
+                // Force reload
+                window.location.reload();
+            };
+
             useEffect(() => {
                 if (categories.includes(category)) {
-                    setLoading(true);
+                    if (!isDataCached) setLoading(true);
                     fetchScrapData(category)
                         .then(data => {
                             setChartData(data);
@@ -2021,6 +2305,7 @@
                         })
                         .catch(err => {
                             console.error("Failed to fetch data", err);
+                            setChartData(fallbackData);
                             setLoading(false);
                         });
                 } else {
@@ -2037,7 +2322,7 @@
                         <div className="max-w-[1920px] mx-auto flex flex-wrap gap-4 items-center justify-between">
                             <div className="flex flex-wrap gap-3 items-center">
                                 <div className="flex items-center gap-2">
-                                    <label className="text-sm font-bold text-gray-800 whitespace-nowrap">{t.primaryYear}:</label>
+                                    <label className="text-base font-bold text-gray-800 whitespace-nowrap">{t.primaryYear}:</label>
                                     <select 
                                         value={primaryYear} 
                                         onChange={(e) => {
@@ -2048,70 +2333,125 @@
                                                 setCompareYear(newCompareYear);
                                             }
                                         }}
-                                        className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-md focus:ring-blue-500 focus:border-blue-500 block p-2 font-medium shadow-sm outline-none"
+                                        className="bg-gray-50 border border-gray-300 text-gray-900 text-base rounded-md focus:ring-blue-500 focus:border-blue-500 block p-2 font-medium shadow-sm outline-none"
                                     >
                                         {availableYears.map(y => <option key={y} value={y}>{y}</option>)}
                                     </select>
                                 </div>
                                 <div className="flex items-center gap-2">
-                                    <label className="text-sm font-bold text-gray-800 whitespace-nowrap">{t.compareYear}:</label>
+                                    <label className="text-base font-bold text-gray-800 whitespace-nowrap">{t.compareYear}:</label>
                                     <select 
                                         value={compareYear} 
                                         onChange={(e) => setCompareYear(e.target.value)}
-                                        className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-md focus:ring-blue-500 focus:border-blue-500 block p-2 font-medium shadow-sm outline-none"
+                                        className="bg-gray-50 border border-gray-300 text-gray-900 text-base rounded-md focus:ring-blue-500 focus:border-blue-500 block p-2 font-medium shadow-sm outline-none"
                                     >
                                         {availableYears.map(y => <option key={y} value={y}>{y}</option>)}
                                     </select>
                                 </div>
                                 <div className="flex items-center gap-2">
-                                    <label className="text-sm font-bold text-gray-800 whitespace-nowrap">{t.category}:</label>
+                                    <label className="text-base font-bold text-gray-800 whitespace-nowrap">{t.category}:</label>
                                     <select 
                                         value={category} 
                                         onChange={(e) => setCategory(e.target.value)}
-                                        className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-md focus:ring-blue-500 focus:border-blue-500 block p-2 font-medium shadow-sm outline-none"
+                                        className="bg-gray-50 border border-gray-300 text-gray-900 text-base rounded-md focus:ring-blue-500 focus:border-blue-500 block p-2 font-medium shadow-sm outline-none"
                                     >
                                         {categories.map(c => <option key={c} value={c}>{c}</option>)}
                                     </select>
                                 </div>
                                 <div className="flex items-center gap-2">
-                                    <label className="text-sm font-bold text-gray-800 whitespace-nowrap">{lang === 'zh' ? '圖表類型' : 'Chart Type'}:</label>
+                                    <label className="text-base font-bold text-gray-800 whitespace-nowrap">{lang === 'zh' ? '圖表類型' : 'Chart Type'}:</label>
                                     <select 
                                         value={chartType} 
                                         onChange={(e) => setChartType(e.target.value)}
-                                        className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-md focus:ring-blue-500 focus:border-blue-500 block p-2 font-medium shadow-sm outline-none"
+                                        className="bg-gray-50 border border-gray-300 text-gray-900 text-base rounded-md focus:ring-blue-500 focus:border-blue-500 block p-2 font-medium shadow-sm outline-none"
                                     >
-                                        <option value="ratio">{lang === 'zh' ? '報廢率 (%)' : 'Scrap Ratio (%)'}</option>
+                                        <option value="ratio">{lang === 'zh' ? '報廢率' : 'Scrap Ratio'}</option>
                                         <option value="weight">{lang === 'zh' ? '報廢重量 (KG)' : 'Scrap Weight (KG)'}</option>
                                     </select>
                                 </div>
                                 <div className="flex items-center gap-2">
-                                    <label className="text-sm font-bold text-gray-800 whitespace-nowrap">{t.language}:</label>
+                                    <div className="flex items-center gap-1">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-gray-600">
+                                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                                            <polyline points="14 2 14 8 20 8"></polyline>
+                                            <text x="7" y="18" fill="currentColor" fontSize="6" fontWeight="bold" fontFamily="Arial">CSV</text>
+                                        </svg>
+                                        <label className="text-base font-bold text-gray-800 whitespace-nowrap">{lang === 'zh' ? 'CSV 年份' : 'CSV Year'}:</label>
+                                    </div>
+                                    <select 
+                                        value={scrapPercentYear} 
+                                        onChange={(e) => setScrapPercentYear(e.target.value)}
+                                        className="bg-gray-50 border border-gray-300 text-gray-900 text-base rounded-md focus:ring-blue-500 focus:border-blue-500 block p-2 font-medium shadow-sm outline-none"
+                                    >
+                                        <option value="No">No</option>
+                                        {availableYears.map(y => <option key={y} value={y}>{y}</option>)}
+                                    </select>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                    <label className="text-base font-bold text-gray-800 whitespace-nowrap">{t.language}:</label>
                                     <select 
                                         value={lang} 
                                         onChange={(e) => setLang(e.target.value)}
-                                        className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-md focus:ring-blue-500 focus:border-blue-500 block p-2 font-medium shadow-sm outline-none"
+                                        className="bg-gray-50 border border-gray-300 text-gray-900 text-base rounded-md focus:ring-blue-500 focus:border-blue-500 block p-2 font-medium shadow-sm outline-none"
                                     >
                                         <option value="zh">繁體中文</option>
                                         <option value="en">English</option>
                                     </select>
                                 </div>
                             </div>
-                            <button
-                                onClick={handleScreenshot}
-                                className="flex items-center gap-2 px-3 py-2 bg-blue-600 text-white text-sm font-medium rounded-md hover:bg-blue-700 transition-colors shadow-sm ml-2"
-                                title={lang === 'zh' ? '複製截圖' : 'Copy Screenshot'}
-                            >
-                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
-                                {lang === 'zh' ? '複製' : 'Copy'}
-                            </button>
-                            <button
-                                onClick={() => setPointStyles({})}
-                                className="flex items-center gap-2 px-3 py-2 bg-red-500 text-white text-sm font-medium rounded-md hover:bg-red-600 transition-colors shadow-sm ml-2"
-                                title={lang === 'zh' ? '清除所有標記' : 'Clear All Highlights'}
-                            >
-                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 6h18"></path><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"></path><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"></path></svg>
-                                {lang === 'zh' ? '清除' : 'Clear'}
-                            </button>
+                            <div className="flex items-center gap-2 ml-auto">
+                                <button
+                                    onClick={() => setIsEditMode(!isEditMode)}
+                                    className={cn(
+                                        "flex items-center gap-2 px-3 py-2 rounded-md border-2 transition-all shadow-sm font-medium text-base",
+                                        isEditMode 
+                                            ? "bg-blue-600 text-white border-blue-600" 
+                                            : "bg-white text-gray-700 border-gray-300 hover:border-blue-400"
+                                    )}
+                                    title={isEditMode ? t.done : t.adjustFont}
+                                >
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                        <path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"></path>
+                                    </svg>
+                                    {isEditMode ? t.done : t.adjustFont}
+                                </button>
+                                <button
+                                    onClick={() => {
+                                        setExpandedRows({ prodWeight: true, totalScrapWeight: true, totalScrapRatio: true });
+                                        setTableFontSize(14);
+                                        setPointStyles({});
+                                    }}
+                                    className="flex items-center gap-2 px-3 py-2 bg-gray-600 text-white text-base font-medium rounded-md hover:bg-gray-700 transition-colors shadow-sm"
+                                    title={t.resetDefaults}
+                                >
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path><path d="M3 3v5h5"></path></svg>
+                                    {t.resetDefaults}
+                                </button>
+                                <button
+                                    onClick={handleScreenshot}
+                                    className="flex items-center gap-2 px-3 py-2 bg-blue-600 text-white text-base font-medium rounded-md hover:bg-blue-700 transition-colors shadow-sm"
+                                    title={lang === 'zh' ? '複製截圖' : 'Copy Screenshot'}
+                                >
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+                                    {lang === 'zh' ? '複製' : 'Copy'}
+                                </button>
+                                <button
+                                    onClick={() => setPointStyles({})}
+                                    className="flex items-center gap-2 px-3 py-2 bg-red-500 text-white text-base font-medium rounded-md hover:bg-red-600 transition-colors shadow-sm"
+                                    title={lang === 'zh' ? '清除所有標記' : 'Clear All Highlights'}
+                                >
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 6h18"></path><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"></path><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"></path></svg>
+                                    {lang === 'zh' ? '清除' : 'Clear'}
+                                </button>
+                                <button
+                                    onClick={handleClearCache}
+                                    className="flex items-center gap-2 px-3 py-2 bg-orange-600 text-white text-base font-medium rounded-md hover:bg-orange-700 transition-colors shadow-sm"
+                                    title={t.clearCache}
+                                >
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 12a9 9 0 1 1-9-9c2.52 0 4.93 1 6.74 2.74L21 8"></path><path d="M21 3v5h-5"></path></svg>
+                                    {t.clearCache}
+                                </button>
+                            </div>
                         </div>
                     </div>
 
@@ -2125,11 +2465,13 @@
                             category={category} 
                             primaryYear={primaryYear}
                             compareYear={compareYear}
+                            scrapPercentYear={scrapPercentYear}
                             chartType={chartType}
                             data={chartData}
                             pointStyles={pointStyles}
                             onPointStyleChange={setPointStyles}
                             isCapturing={isCapturing}
+                            setIsCapturing={setIsCapturing}
                         />
                         
                         <div className={`w-full bg-white rounded-2xl shadow-sm border-2 border-gray-400 flex-col relative ${isCapturing ? 'flex-none h-auto overflow-visible' : 'flex-1 overflow-hidden flex'}`}>
@@ -2138,7 +2480,7 @@
                                     <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
                                 </div>
                             )}
-                            <div className="p-4 border-b-2 border-gray-300 bg-gray-50/50">
+                            <div className="p-4 border-b-2 border-gray-300 bg-gray-50/50 flex flex-col sm:flex-row justify-between items-center gap-4">
                                 <h2 className="text-lg font-bold text-gray-900">
                                     {compareYear}{lang === 'zh' ? '年' : ''}/{primaryYear}{lang === 'zh' ? '年' : ''} {lang === 'zh' ? (categoryNamesZh[category] || category) : (categoryNamesEn[category] || category)} {t.tableTitle}
                                 </h2>
@@ -2148,14 +2490,216 @@
                                     lang={lang} 
                                     primaryYear={primaryYear} 
                                     compareYear={compareYear} 
+                                    scrapPercentYear={scrapPercentYear}
                                     data={chartData}
                                     category={category}
                                     pointStyles={pointStyles}
                                     onPointStyleChange={setPointStyles}
                                     isCapturing={isCapturing}
+                                    setIsCapturing={setIsCapturing}
+                                    expandedRows={expandedRows}
+                                    setExpandedRows={setExpandedRows}
+                                    tableFontSize={tableFontSize}
+                                    isEditMode={isEditMode}
+                                    selectedCells={selectedCells}
+                                    onCellClick={(e, id, currentSize, bulkIds = []) => {
+                                        const rect = e.currentTarget.getBoundingClientRect();
+                                        
+                                        setSelectedCells(prev => {
+                                            if (bulkIds.length > 0) {
+                                                // Check if all bulkIds are already selected
+                                                const allSelected = bulkIds.every(bid => prev.includes(bid));
+                                                if (allSelected) {
+                                                    // Deselect all in this bulk
+                                                    return prev.filter(item => !bulkIds.includes(item));
+                                                } else {
+                                                    // Select all in this bulk (additive)
+                                                    const next = [...prev];
+                                                    bulkIds.forEach(bid => {
+                                                        if (!next.includes(bid)) next.push(bid);
+                                                    });
+                                                    return next;
+                                                }
+                                            }
+
+                                            // Single cell toggle
+                                            const isSelected = prev.includes(id);
+                                            if (isSelected) {
+                                                return prev.filter(item => item !== id);
+                                            } else {
+                                                return [...prev, id];
+                                            }
+                                        });
+
+                                        setEditingCell({
+                                            id,
+                                            x: rect.left,
+                                            y: rect.top,
+                                            width: rect.width,
+                                            height: rect.height,
+                                            currentSize
+                                        });
+                                    }}
                                 />
                             </div>
                         </div>
+
+                        {/* Floating Cell Editor */}
+                        {editingCell && (
+                            <div 
+                                className="fixed z-[100] bg-white border-2 border-blue-500 shadow-2xl rounded-lg p-3 flex flex-col gap-3 min-w-[260px]"
+                                style={{ 
+                                    left: editorPosition.x,
+                                    top: editorPosition.y
+                                }}
+                            >
+                                <div 
+                                    className={cn(
+                                        "flex justify-between items-center border-b pb-2 select-none",
+                                        isLocked ? "cursor-default" : "cursor-move"
+                                    )}
+                                    onMouseDown={(e) => {
+                                        if (isLocked) return;
+                                        setIsDragging(true);
+                                        setDragOffset({
+                                            x: e.clientX - editorPosition.x,
+                                            y: e.clientY - editorPosition.y
+                                        });
+                                    }}
+                                >
+                                    <div className="flex items-center gap-2">
+                                        {!isLocked && (
+                                            <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6h16M4 12h16M4 18h16"></path>
+                                            </svg>
+                                        )}
+                                        <span className="text-sm font-bold text-gray-700">{t.fontSize}</span>
+                                    </div>
+                                    <div className="flex items-center gap-1">
+                                        <button 
+                                            onClick={() => setIsLocked(!isLocked)} 
+                                            className={cn(
+                                                "p-1 rounded transition-colors",
+                                                isLocked ? "text-blue-600 bg-blue-50" : "text-gray-400 hover:text-gray-600 hover:bg-gray-100"
+                                            )}
+                                            title={isLocked ? t.unlock : t.lock}
+                                            onMouseDown={(e) => e.stopPropagation()}
+                                        >
+                                            {isLocked ? (
+                                                <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+                                                    <path d="M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zm-6 9c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm3.1-9H8.9V6c0-1.71 1.39-3.1 3.1-3.1 1.71 0 3.1 1.39 3.1 3.1v2z"/>
+                                                </svg>
+                                            ) : (
+                                                <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+                                                    <path d="M12 17c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm6-9h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6h1.9c0-1.71 1.39-3.1 3.1-3.1 1.71 0 3.1 1.39 3.1 3.1v3H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zm0 12H6V10h12v10z"/>
+                                                </svg>
+                                            )}
+                                        </button>
+                                        <button 
+                                            onClick={() => setEditingCell(null)} 
+                                            className="text-gray-400 hover:text-gray-600 p-1 hover:bg-gray-100 rounded"
+                                            onMouseDown={(e) => e.stopPropagation()}
+                                        >
+                                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                                        </button>
+                                    </div>
+                                </div>
+                                <div className="flex items-center justify-between gap-4">
+                                    <div className="flex items-center gap-2">
+                                        <button 
+                                            onClick={() => {
+                                                const targets = selectedCells.length > 0 ? selectedCells : [editingCell.id];
+                                                setPointStyles(prev => {
+                                                    const next = { ...prev };
+                                                    targets.forEach(tid => {
+                                                        next[tid] = {
+                                                            ...next[tid],
+                                                            fontSize: Math.max(8, (next[tid]?.fontSize || tableFontSize) - 1)
+                                                        };
+                                                    });
+                                                    return next;
+                                                });
+                                            }}
+                                            className="w-10 h-10 flex items-center justify-center bg-gray-100 hover:bg-gray-200 rounded-full text-xl font-bold transition-colors"
+                                        >
+                                            -
+                                        </button>
+                                        <input 
+                                            type="number"
+                                            value={selectedCells.length > 1 ? (pointStyles[selectedCells[0]]?.fontSize || tableFontSize) : (pointStyles[editingCell.id]?.fontSize || tableFontSize)}
+                                            onChange={(e) => {
+                                                const val = parseInt(e.target.value);
+                                                if (isNaN(val)) return;
+                                                const targets = selectedCells.length > 0 ? selectedCells : [editingCell.id];
+                                                setPointStyles(prev => {
+                                                    const next = { ...prev };
+                                                    targets.forEach(tid => {
+                                                        next[tid] = {
+                                                            ...next[tid],
+                                                            fontSize: Math.min(32, Math.max(8, val))
+                                                        };
+                                                    });
+                                                    return next;
+                                                });
+                                            }}
+                                            className="w-14 text-center font-bold text-blue-600 text-lg border border-blue-200 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                        />
+                                        <button 
+                                            onClick={() => {
+                                                const targets = selectedCells.length > 0 ? selectedCells : [editingCell.id];
+                                                setPointStyles(prev => {
+                                                    const next = { ...prev };
+                                                    targets.forEach(tid => {
+                                                        next[tid] = {
+                                                            ...next[tid],
+                                                            fontSize: Math.min(32, (next[tid]?.fontSize || tableFontSize) + 1)
+                                                        };
+                                                    });
+                                                    return next;
+                                                });
+                                            }}
+                                            className="w-10 h-10 flex items-center justify-center bg-gray-100 hover:bg-gray-200 rounded-full text-xl font-bold transition-colors"
+                                        >
+                                            +
+                                        </button>
+                                    </div>
+                                    <button 
+                                        onClick={() => {
+                                            const targets = selectedCells.length > 0 ? selectedCells : [editingCell.id];
+                                            setPointStyles(prev => {
+                                                const next = { ...prev };
+                                                // Determine if we should turn on or off based on the first target
+                                                const newState = !prev[targets[0]]?.isRed;
+                                                targets.forEach(tid => {
+                                                    next[tid] = {
+                                                        ...next[tid],
+                                                        isRed: newState
+                                                    };
+                                                });
+                                                return next;
+                                            });
+                                        }}
+                                        className={cn(
+                                            "px-3 py-2 rounded font-bold text-sm transition-colors",
+                                            (selectedCells.length > 0 ? pointStyles[selectedCells[0]]?.isRed : pointStyles[editingCell.id]?.isRed) ? "bg-red-500 text-white" : "bg-gray-200 text-gray-700 hover:bg-red-100"
+                                        )}
+                                    >
+                                        {lang === 'zh' ? '標紅' : 'Red'}
+                                    </button>
+                                </div>
+                                {selectedCells.length > 0 && (
+                                    <div className="text-xs text-gray-500 border-t pt-2 flex justify-between items-center">
+                                        <span>{lang === 'zh' ? `已選擇 ${selectedCells.length} ${t.cellsSelected}` : `${selectedCells.length} ${t.cellsSelected}`}</span>
+                                        <button 
+                                            onClick={() => setSelectedCells([])}
+                                            className="text-blue-600 hover:underline"
+                                        >
+                                            {t.clearSelection}
+                                        </button>
+                                    </div>
+                                )}
+                            </div>
+                        )}
                     </div>
                 </div>
             );
