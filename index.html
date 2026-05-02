@@ -596,11 +596,11 @@
                     if ((section === 'CT' || section === 'CUTTING') && (scrapType === 'CHAFER' || scrapType === 'CH')) target.ctChRubber += weight;
                     if ((section === 'CT' || section === 'CUTTING') && scrapType === 'RUBBER') target.ctRbRubber += weight;
                     if ((section === 'CT' || section === 'CUTTING') && (scrapType === 'PLY' || scrapType === 'CORD')) target.ctPlyRubber += weight; 
-                    if ((section === 'CT' || section === 'CUTTING') && (scrapType === 'BW' || scrapType === 'BEAD WIRE')) target.ctBwRubber += weight;
+                    if ((section === 'CT' || section === 'CUTTING') && (scrapType === 'BW' || scrapType === 'BEAD WIRE' || scrapType === 'BIC')) target.ctBwRubber += weight;
                     if ((section === 'TB' || section === 'BD' || section === 'TIRE BUILDING') && scrapType === 'RUBBER') target.bdRbRubber += weight;
                     if ((section === 'TB' || section === 'BD' || section === 'TIRE BUILDING') && scrapType === 'PLY') target.bdPlyRubber += weight;
                     if ((section === 'TB' || section === 'BD' || section === 'TIRE BUILDING') && (scrapType === 'CHAFER' || scrapType === 'CH')) target.bdChRubber += weight;
-                    if ((section === 'TB' || section === 'BD' || section === 'TIRE BUILDING') && (scrapType === 'BW' || scrapType === 'BEAD WIRE')) target.bdBwRubber += weight;
+                    if ((section === 'TB' || section === 'BD' || section === 'TIRE BUILDING') && (scrapType === 'BW' || scrapType === 'BEAD WIRE' || scrapType === 'BIC')) target.bdBwRubber += weight;
                     if ((section === 'CR' || section === 'CURING' || section === 'CUR' || section === 'CUR_RB') && scrapType === 'RUBBER') target.curingRubber += weight;
                     if ((section === 'RISP' || section === 'RUBBER INSPECTION') && scrapType === 'RUBBER') target.rispRubber += weight;
                     if ((section === 'RISP' || section === 'RUBBER INSPECTION') && scrapType === 'PLY') target.rispPlyRubber += weight;
@@ -1252,7 +1252,10 @@
                 const scrapTypeMap = {
                     "CH": "CHAFER",
                     "CHM": "CHEMICAL",
-                    "CB": "CARBON BLACK" // Assuming CB is Carbon Black, adjust if needed
+                    "CB": "CARBON BLACK", // Assuming CB is Carbon Black, adjust if needed
+                    "BW": "BW",
+                    "BIC": "BW",
+                    "BEAD WIRE": "BW"
                 };
                 const mappedScrapType = scrapTypeMap[scrapType] || scrapType;
                 
@@ -1434,16 +1437,27 @@
                             }
                             
                             let matchScrapType = false;
+                            const rowScrapType = String(colG).trim().toUpperCase();
                             if (section === "TOTAL") {
                                 if (scrapType === "TOTAL") {
                                     matchScrapType = true;
                                 } else if (scrapType === "PLY/CH") {
-                                    matchScrapType = String(colG).trim().toUpperCase() === "PLY" || String(colG).trim().toUpperCase() === "CHAFER";
+                                    matchScrapType = rowScrapType === "PLY" || rowScrapType === "CHAFER" || rowScrapType === "CH";
+                                } else if (scrapType === "BW" || scrapType === "BIC" || scrapType === "BEAD WIRE") {
+                                    matchScrapType = rowScrapType === "BW" || rowScrapType === "BIC" || rowScrapType === "BEAD WIRE";
                                 } else {
-                                    matchScrapType = String(colG).trim().toUpperCase() === scrapType.toUpperCase();
+                                    matchScrapType = rowScrapType === scrapType.toUpperCase();
                                 }
                             } else {
-                                matchScrapType = String(colG).trim().toUpperCase() === mappedScrapType.toUpperCase();
+                                if (mappedScrapType.toUpperCase() === "BW" || mappedScrapType.toUpperCase() === "BIC" || mappedScrapType.toUpperCase() === "BEAD WIRE") {
+                                    matchScrapType = rowScrapType === "BW" || rowScrapType === "BIC" || rowScrapType === "BEAD WIRE";
+                                } else if (mappedScrapType.toUpperCase() === "CHAFER" || mappedScrapType.toUpperCase() === "CH") {
+                                    matchScrapType = rowScrapType === "CHAFER" || rowScrapType === "CH";
+                                } else if (mappedScrapType.toUpperCase() === "PLY" || mappedScrapType.toUpperCase() === "CORD") {
+                                    matchScrapType = rowScrapType === "PLY" || rowScrapType === "CORD";
+                                } else {
+                                    matchScrapType = rowScrapType === mappedScrapType.toUpperCase();
+                                }
                             }
                             
                             return matchDate && matchSection && matchScrapType;
