@@ -59,6 +59,77 @@
             return inputs.filter(Boolean).join(' ');
         }
 
+        function getTargetMonthYear(d, useUTC = false) {
+            let monthNum = useUTC ? d.getUTCMonth() + 1 : d.getMonth() + 1;
+            let yearNum = useUTC ? d.getUTCFullYear() : d.getFullYear();
+            
+            try {
+                const rangesStr = localStorage.getItem('customMonthRanges');
+                if (rangesStr) {
+                    const ranges = JSON.parse(rangesStr);
+                    
+                    // First pass: check if d falls in ANY custom range
+                    for (const key in ranges) {
+                        const r = ranges[key];
+                        if (r.start && r.end) {
+                            const [sY, sM, sD] = r.start.split('-');
+                            const [eY, eM, eD] = r.end.split('-');
+                            
+                            let start = new Date(sY, sM - 1, sD, 0, 0, 0);
+                            let end = new Date(eY, eM - 1, eD, 23, 59, 59, 999);
+                            if (useUTC) {
+                                start = new Date(Date.UTC(sY, sM - 1, sD, 0, 0, 0));
+                                end = new Date(Date.UTC(eY, eM - 1, eD, 23, 59, 59, 999));
+                            }
+                            
+                            if (d >= start && d <= end) {
+                                return { month: r.month.toString().padStart(2, "0"), year: String(r.year || yearNum) };
+                            }
+                        }
+                    }
+                    
+                    // Second pass: if d didn't match any custom range, check if its natural month was customized.
+                    // If the natural month was customized, d does not belong in it.
+                    const naturalKey = `${yearNum}-${monthNum.toString().padStart(2, "0")}`;
+                    if (ranges[naturalKey]) {
+                        const r = ranges[naturalKey];
+                        if (r.start && r.end) {
+                            const [sY, sM, sD] = r.start.split('-');
+                            const [eY, eM, eD] = r.end.split('-');
+                            
+                            let start = new Date(sY, sM - 1, sD, 0, 0, 0);
+                            let end = new Date(eY, eM - 1, eD, 23, 59, 59, 999);
+                            if (useUTC) {
+                                start = new Date(Date.UTC(sY, sM - 1, sD, 0, 0, 0));
+                                end = new Date(Date.UTC(eY, eM - 1, eD, 23, 59, 59, 999));
+                            }
+                            
+                            if (d < start) {
+                                monthNum -= 1;
+                                if (monthNum < 1) {
+                                    monthNum = 12;
+                                    yearNum -= 1;
+                                }
+                            } else if (d > end) {
+                                monthNum += 1;
+                                if (monthNum > 12) {
+                                    monthNum = 1;
+                                    yearNum += 1;
+                                }
+                            }
+                        }
+                    }
+                }
+            } catch (e) {
+                console.error("Error reading custom month ranges", e);
+            }
+            
+            return {
+                month: monthNum.toString().padStart(2, "0"),
+                year: yearNum.toString()
+            };
+        }
+
         function getMonthName(monthStr, lang) {
             const monthNum = parseInt(monthStr, 10);
             if (lang === 'zh') {
@@ -374,10 +445,15 @@
                         month = dateParts[0].padStart(2, "0");
                         year = dateParts[1];
                     } else if (dateParts.length === 3) {
-                        const d = new Date(row[0]);
+                        let d = new Date(row[0]);
+                        if (isNaN(d.getTime())) {
+                            // Try DD/MM/YYYY
+                           d = new Date(parseInt(dateParts[2]), parseInt(dateParts[1]) - 1, parseInt(dateParts[0]));
+                        }
                         if (!isNaN(d.getTime())) {
-                            month = (d.getMonth() + 1).toString().padStart(2, "0");
-                            year = d.getFullYear().toString();
+                            const targetInfo = getTargetMonthYear(d);
+                            month = targetInfo.month;
+                            year = targetInfo.year;
                         } else {
                             month = dateParts[1].padStart(2, "0");
                             year = dateParts[2];
@@ -434,8 +510,9 @@
                         const d = new Date(dateStr);
                         if (isNaN(d.getTime())) return;
                         d.setUTCHours(d.getUTCHours() + 12);
-                        const month = (d.getUTCMonth() + 1).toString().padStart(2, "0");
-                        const year = d.getUTCFullYear().toString();
+                        const targetInfo = getTargetMonthYear(d, true);
+                        const month = targetInfo.month;
+                        const year = targetInfo.year;
 
                         if (!monthlyDataMap[month]) monthlyDataMap[month] = {};
                         if (!monthlyDataMap[month][year]) {
@@ -471,11 +548,23 @@
                        const dateStr = String(row[0]).trim();
                        if (!dateStr || dateStr === 'Date' || dateStr.toUpperCase() === 'DATE') return;
                        
-                       const d = new Date(dateStr);
+                       let d = new Date(dateStr);
+                       if (isNaN(d.getTime()) && (dateStr.includes("/") || dateStr.includes("-"))) {
+                           const separator = dateStr.includes('/') ? '/' : '-';
+                           const parts = dateStr.split(separator);
+                           if (parts.length === 3) {
+                               if (parts[0].length === 4) {
+                                   d = new Date(parseInt(parts[0]), parseInt(parts[1]) - 1, parseInt(parts[2]));
+                               } else if (parts[2].length === 4) {
+                                   d = new Date(parseInt(parts[2]), parseInt(parts[1]) - 1, parseInt(parts[0]));
+                               }
+                           }
+                       }
                        if (isNaN(d.getTime())) return;
                        d.setUTCHours(d.getUTCHours() + 12);
-                       const month = (d.getUTCMonth() + 1).toString().padStart(2, "0");
-                       const year = d.getUTCFullYear().toString();
+                       const targetInfo = getTargetMonthYear(d, true);
+                       const month = targetInfo.month;
+                       const year = targetInfo.year;
 
                        if (!monthlyDataMap[month]) monthlyDataMap[month] = {};
                        if (!monthlyDataMap[month][year]) {
@@ -536,40 +625,50 @@
                     if (!dateStr) return;
                     let month, year;
 
-                    if (dateStr.includes("/") || dateStr.includes("-")) {
+                    const d = new Date(dateStr);
+                    if (!isNaN(d.getTime())) {
+                        const targetInfo = getTargetMonthYear(d);
+                        month = targetInfo.month;
+                        year = targetInfo.year;
+                    } else if (dateStr.includes("/") || dateStr.includes("-")) {
                         const separator = dateStr.includes('/') ? '/' : '-';
                         const parts = dateStr.split(separator);
                         if (parts.length === 2) {
                             month = parseInt(parts[0]).toString().padStart(2, "0");
                             year = parts[1];
                         } else if (parts.length === 3) {
+                            let parsedDate;
                             if (parts[0].length === 4) {
-                                year = parts[0];
-                                month = parseInt(parts[1]).toString().padStart(2, "0");
+                                // YYYY-MM-DD
+                                parsedDate = new Date(parseInt(parts[0]), parseInt(parts[1]) - 1, parseInt(parts[2]));
                             } else if (parts[2].length === 4) {
-                                year = parts[2];
-                                month = parseInt(parts[0]).toString().padStart(2, "0");
+                                // DD/MM/YYYY
+                                parsedDate = new Date(parseInt(parts[2]), parseInt(parts[1]) - 1, parseInt(parts[0]));
+                            }
+                            if (parsedDate && !isNaN(parsedDate.getTime())) {
+                                const targetInfo = getTargetMonthYear(parsedDate);
+                                month = targetInfo.month;
+                                year = targetInfo.year;
+                            } else {
+                                year = parts[2] && parts[2].length === 4 ? parts[2] : parts[0];
+                                month = parseInt(parts[1]).toString().padStart(2, "0");
                             }
                         }
                     } else {
-                        const d = new Date(dateStr);
-                        if (!isNaN(d.getTime())) {
-                            month = (d.getMonth() + 1).toString().padStart(2, "0");
-                            year = d.getFullYear().toString();
+                        // In some cases Date string won't parse properly and month ends up as "NaN", if so, try full parse
+                        if (month === "NaN") {
+                           const d2 = new Date(dateStr);
+                           if (!isNaN(d2.getTime())) {
+                               const targetInfo = getTargetMonthYear(d2);
+                               month = targetInfo.month;
+                               year = targetInfo.year;
+                           } else {
+                               return; // Give up
+                           }
                         }
                     }
                     if (!month || !year) return;
-                    
-                    // In some cases Date string won't parse properly and month ends up as "NaN", if so, try full parse
-                    if (month === "NaN") {
-                       const d = new Date(dateStr);
-                       if (!isNaN(d.getTime())) {
-                           month = (d.getMonth() + 1).toString().padStart(2, "0");
-                           year = d.getFullYear().toString();
-                       } else {
-                           return; // Give up
-                       }
-                    }
+
                     
                     if (!monthlyDataMap[month]) monthlyDataMap[month] = {};
                     if (!monthlyDataMap[month][year]) {
@@ -1027,7 +1126,7 @@
         };
 
         // DataTable Component
-        const DataTable = ({ lang, primaryYear, compareYear, scrapPercentYear, data, category, pointStyles, onPointStyleChange, isCapturing, setIsCapturing, expandedRows, setExpandedRows, tableFontSize, onCellClick, isEditMode, selectedCells }) => {
+        const DataTable = ({ lang, primaryYear, compareYear, scrapPercentYear, data, category, pointStyles, onPointStyleChange, isCapturing, setIsCapturing, expandedRows, setExpandedRows, tableFontSize, onDateDoubleClick, onCellClick, isEditMode, selectedCells }) => {
             const tableRef = useRef(null);
             const t = translations[lang];
 
@@ -1384,27 +1483,38 @@
                                         // Check if last part is year (DD/MM/YYYY or MM/DD/YYYY)
                                         else if (parts[2].length === 4) {
                                             itemYear = parseInt(parts[2]);
-                                            // We need to be careful here. Assuming MM/DD/YYYY or DD/MM/YYYY
-                                            // Let's try to infer from monthNum if possible, or just use Date object as fallback
                                             const d1 = new Date(colAStr);
                                             if (!isNaN(d1.getTime())) {
                                                 d1.setUTCHours(d1.getUTCHours() + 12);
                                                 itemYear = d1.getUTCFullYear();
                                                 itemMonth = d1.getUTCMonth() + 1;
+                                            } else {
+                                                // Try DD/MM/YYYY
+                                                const d2 = new Date(parseInt(parts[2]), parseInt(parts[1]) - 1, parseInt(parts[0]));
+                                                if (!isNaN(d2.getTime())) {
+                                                    itemYear = d2.getFullYear();
+                                                    itemMonth = d2.getMonth() + 1;
+                                                }
                                             }
                                         }
                                     }
                                 }
 
                                 if (itemYear && itemMonth) {
-                                    matchDate = (String(itemYear) === String(year)) && (Number(itemMonth) === Number(monthNum));
+                                    const parsedDate = new Date(colA);
+                                    if (!isNaN(parsedDate.getTime())) {
+                                        parsedDate.setUTCHours(parsedDate.getUTCHours() + 12);
+                                        const targetInfo = getTargetMonthYear(parsedDate, true);
+                                        matchDate = (String(targetInfo.year) === String(year)) && (Number(targetInfo.month) === Number(monthNum));
+                                    } else {
+                                        matchDate = (String(itemYear) === String(year)) && (Number(itemMonth) === Number(monthNum));
+                                    }
                                 } else {
                                     const dateObj = new Date(colA);
                                     if (!isNaN(dateObj.getTime())) {
                                         dateObj.setUTCHours(dateObj.getUTCHours() + 12);
-                                        const y = dateObj.getUTCFullYear();
-                                        const m = dateObj.getUTCMonth() + 1;
-                                        matchDate = (String(y) === String(year)) && (Number(m) === Number(monthNum));
+                                        const targetInfo = getTargetMonthYear(dateObj, true);
+                                        matchDate = (String(targetInfo.year) === String(year)) && (Number(targetInfo.month) === Number(monthNum));
                                     } else {
                                         matchDate = colAStr.includes(searchString) || 
                                                     colAStr.includes(`${monthNum}-${year}`) || 
@@ -1997,25 +2107,46 @@
                                 >
                                     {t.months}
                                 </th>
-                                {months.map((month) => (
-                                    <th
-                                        key={month}
-                                        className={cn(
-                                            "border border-gray-300 p-0.5 sm:p-2 text-center font-medium transition-colors",
-                                            isEditMode ? "cursor-pointer hover:bg-green-200" : ""
-                                        )}
-                                        style={{ fontSize: `${tableFontSize}px`, width: isCapturing ? '67px' : '62px' }}
-                                        onClick={(e) => {
-                                            if (isEditMode) {
-                                                const columnIds = filteredRows.map(r => `${r.labelEn}-${month}`);
-                                                onCellClick(e, `col-${month}`, tableFontSize, columnIds);
-                                            }
-                                        }}
-                                        title={isEditMode ? (lang === 'zh' ? `選取 ${month} 整欄` : `Select all ${month}`) : ""}
-                                    >
-                                        {month}
-                                    </th>
-                                ))}
+                                {data.map((d) => {
+                                    const monthLabel = getMonthName(d.month, lang);
+                                    return (
+                                        <th
+                                            key={d.month}
+                                            className={cn(
+                                                "border border-gray-300 p-0.5 sm:p-2 text-center font-medium transition-colors hover:bg-gray-100",
+                                                isEditMode ? "cursor-pointer hover:bg-green-200" : "cursor-pointer"
+                                            )}
+                                            style={{ fontSize: `${tableFontSize}px`, width: isCapturing ? '67px' : '62px' }}
+                                            onClick={(e) => {
+                                                if (isEditMode) {
+                                                    const columnIds = filteredRows.map(r => `${r.labelEn}-${monthLabel}`);
+                                                    onCellClick(e, `col-${monthLabel}`, tableFontSize, columnIds);
+                                                }
+                                            }}
+                                            onDoubleClick={(e) => {
+                                                e.stopPropagation();
+                                                // Initialize modal with current month
+                                                const defaultYear = primaryYear;
+                                                let start = '';
+                                                let end = '';
+                                                try {
+                                                    const ranges = JSON.parse(localStorage.getItem('customMonthRanges') || '{}');
+                                                    const key = `${defaultYear}-${d.month}`;
+                                                    if (ranges[key]) {
+                                                        start = ranges[key].start || '';
+                                                        end = ranges[key].end || '';
+                                                    }
+                                                } catch (e) {}
+                                                if (onDateDoubleClick) {
+                                                    onDateDoubleClick(d.month, defaultYear, start, end);
+                                                }
+                                            }}
+                                            title={isEditMode ? (lang === 'zh' ? `選取 ${monthLabel} 整欄` : `Select all ${monthLabel}`) : (lang === 'zh' ? '雙擊更改日期範圍' : 'Double click to edit date range')}
+                                        >
+                                            {monthLabel}
+                                        </th>
+                                    );
+                                })}
                             </tr>
                         </thead>
                         <tbody>
@@ -2179,6 +2310,7 @@
             const [isDragging, setIsDragging] = useState(false);
             const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
             const [isLocked, setIsLocked] = useState(false);
+            const [dateModal, setDateModal] = useState({ isOpen: false, month: '', year: '', start: '', end: '' });
             const captureRef = useRef(null);
 
             // Handle dragging of the floating editor
@@ -2516,6 +2648,7 @@
                                     tableFontSize={tableFontSize}
                                     isEditMode={isEditMode}
                                     selectedCells={selectedCells}
+                                    onDateDoubleClick={(month, year, start, end) => setDateModal({ isOpen: true, month, year, start, end })}
                                     onCellClick={(e, id, currentSize, bulkIds = []) => {
                                         const rect = e.currentTarget.getBoundingClientRect();
                                         
@@ -2712,6 +2845,114 @@
                                         </button>
                                     </div>
                                 )}
+                            </div>
+                        )}
+                        {dateModal.isOpen && (
+                            <div className="fixed inset-0 bg-black/50 z-[1000] flex items-center justify-center p-4">
+                                <div className="bg-white rounded-lg shadow-xl w-full max-w-sm overflow-hidden transform transition-all">
+                                    <div className="bg-gray-50 px-4 py-3 border-b flex items-center justify-between">
+                                        <h3 className="text-lg font-bold text-gray-800">
+                                            {lang === 'zh' ? '自訂日期範圍' : 'Custom Date Range'} - {getMonthName(dateModal.month, lang)}
+                                        </h3>
+                                        <button 
+                                            onClick={() => setDateModal({ ...dateModal, isOpen: false })}
+                                            className="text-gray-400 hover:text-gray-600 p-1"
+                                        >
+                                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                                        </button>
+                                    </div>
+                                    <div className="p-4 space-y-4">
+                                        <div>
+                                            <label className="block text-sm font-medium text-gray-700 mb-1">{lang === 'zh' ? '年份' : 'Year'}</label>
+                                            <select 
+                                                value={dateModal.year} 
+                                                onChange={(e) => {
+                                                    const newYear = e.target.value;
+                                                    let start = '';
+                                                    let end = '';
+                                                    try {
+                                                        const ranges = JSON.parse(localStorage.getItem('customMonthRanges') || '{}');
+                                                        const key = `${newYear}-${dateModal.month}`;
+                                                        if (ranges[key]) {
+                                                            start = ranges[key].start || '';
+                                                            end = ranges[key].end || '';
+                                                        }
+                                                    } catch (err) {}
+                                                    setDateModal({ ...dateModal, year: newYear, start, end });
+                                                }}
+                                                className="w-full border border-gray-300 rounded p-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
+                                            >
+                                                <option value={primaryYear}>{primaryYear}</option>
+                                                {compareYear !== primaryYear && (
+                                                    <option value={compareYear}>{compareYear}</option>
+                                                )}
+                                            </select>
+                                        </div>
+                                        <div>
+                                            <label className="block text-sm font-medium text-gray-700 mb-1">{lang === 'zh' ? '開始日期' : 'Start Date'}</label>
+                                            <input 
+                                                type="date" 
+                                                value={dateModal.start} 
+                                                onChange={(e) => setDateModal({ ...dateModal, start: e.target.value })}
+                                                className="w-full border border-gray-300 rounded p-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
+                                            />
+                                        </div>
+                                        <div>
+                                            <label className="block text-sm font-medium text-gray-700 mb-1">{lang === 'zh' ? '結束日期' : 'End Date'}</label>
+                                            <input 
+                                                type="date" 
+                                                value={dateModal.end} 
+                                                onChange={(e) => setDateModal({ ...dateModal, end: e.target.value })}
+                                                className="w-full border border-gray-300 rounded p-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
+                                            />
+                                        </div>
+                                        <p className="text-xs text-gray-500">
+                                            {lang === 'zh' ? '設定後將會重新整理資料。清空日期將恢復預設行為。' : 'Data will be refreshed after saving. Clear dates to restore default behavior.'}
+                                        </p>
+                                    </div>
+                                    <div className="bg-gray-50 px-4 py-3 border-t flex justify-end gap-2">
+                                        <button 
+                                            onClick={() => setDateModal({ ...dateModal, isOpen: false })}
+                                            className="px-4 py-2 text-gray-700 bg-white border border-gray-300 rounded hover:bg-gray-50"
+                                        >
+                                            {lang === 'zh' ? '取消' : 'Cancel'}
+                                        </button>
+                                        <button 
+                                            onClick={() => {
+                                                try {
+                                                    const ranges = JSON.parse(localStorage.getItem('customMonthRanges') || '{}');
+                                                    const key = `${dateModal.year}-${dateModal.month}`;
+                                                    if (!dateModal.start && !dateModal.end) {
+                                                        delete ranges[key];
+                                                    } else {
+                                                        ranges[key] = {
+                                                            year: dateModal.year,
+                                                            month: dateModal.month,
+                                                            start: dateModal.start,
+                                                            end: dateModal.end
+                                                        };
+                                                    }
+                                                    localStorage.setItem('customMonthRanges', JSON.stringify(ranges));
+                                                    setDateModal({ ...dateModal, isOpen: false });
+                                                    // Trigger data refresh
+                                                    setLoading(true);
+                                                    fetchScrapData(category).then(data => {
+                                                        setChartData(data);
+                                                        setLoading(false);
+                                                    }).catch(err => {
+                                                        console.error(err);
+                                                        setLoading(false);
+                                                    });
+                                                } catch (e) {
+                                                    console.error(e);
+                                                }
+                                            }}
+                                            className="px-4 py-2 text-white bg-blue-600 rounded hover:bg-blue-700 shadow-sm font-medium"
+                                        >
+                                            {lang === 'zh' ? '儲存' : 'Save'}
+                                        </button>
+                                    </div>
+                                </div>
                             </div>
                         )}
                     </div>
