@@ -28,6 +28,10 @@
     <!-- html2canvas -->
     <script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
 
+    <!-- Firebase -->
+    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+
     <style>
         body {
             font-family: 'Inter', sans-serif;
@@ -54,6 +58,59 @@
         }
         const { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } = window.Recharts;
 
+        // Initialize Firebase
+        const firebaseConfig = {
+            targetConfig: true,
+            "projectId": "gen-lang-client-0584943617",
+            "appId": "1:922310602666:web:0013fbfb63c5132e7685d3",
+            "apiKey": "AIzaSyCFs5xF3t2qqG4ymZV1n3hs1STQM8_FI5M",
+            "authDomain": "gen-lang-client-0584943617.firebaseapp.com",
+            "storageBucket": "gen-lang-client-0584943617.firebasestorage.app",
+        };
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
+        db.settings({ 
+            ignoreUndefinedProperties: true,
+            experimentalForceLongPolling: true,
+            useFetchStreams: false
+        });
+
+        // Global state for custom month ranges
+        window.customMonthRanges = {};
+
+        async function initCustomRanges() {
+            try {
+                const doc = await db.collection("settings").doc("customMonthRanges").get();
+                if (doc.exists && doc.data().ranges) {
+                    window.customMonthRanges = JSON.parse(doc.data().ranges);
+                    localStorage.setItem('customMonthRanges', doc.data().ranges);
+                } else {
+                    const localStr = localStorage.getItem('customMonthRanges');
+                    if (localStr) {
+                        window.customMonthRanges = JSON.parse(localStr);
+                        await db.collection("settings").doc("customMonthRanges").set({ ranges: localStr });
+                    }
+                }
+            } catch (e) {
+                console.error("Failed to load ranges from Firebase", e);
+                const localStr = localStorage.getItem('customMonthRanges');
+                if (localStr) {
+                    window.customMonthRanges = JSON.parse(localStr);
+                }
+            }
+        }
+
+        async function saveCustomRanges(ranges) {
+            try {
+                window.customMonthRanges = ranges;
+                const rangesStr = JSON.stringify(ranges);
+                localStorage.setItem('customMonthRanges', rangesStr);
+                await db.collection("settings").doc("customMonthRanges").set({ ranges: rangesStr });
+            } catch (e) {
+                console.error("Failed to save ranges to Firebase", e);
+            }
+        }
+
         // --- Utils ---
         function cn(...inputs) {
             return inputs.filter(Boolean).join(' ');
@@ -64,14 +121,12 @@
             let yearNum = useUTC ? d.getUTCFullYear() : d.getFullYear();
             
             try {
-                const rangesStr = localStorage.getItem('customMonthRanges');
-                if (rangesStr) {
-                    const ranges = JSON.parse(rangesStr);
-                    
-                    // First pass: check if d falls in ANY custom range
-                    for (const key in ranges) {
-                        const r = ranges[key];
-                        if (r.start && r.end) {
+                const ranges = window.customMonthRanges || {};
+                
+                // First pass: check if d falls in ANY custom range
+                for (const key in ranges) {
+                    const r = ranges[key];
+                    if (r.start && r.end) {
                             const [sY, sM, sD] = r.start.split('-');
                             const [eY, eM, eD] = r.end.split('-');
                             
@@ -119,7 +174,6 @@
                             }
                         }
                     }
-                }
             } catch (e) {
                 console.error("Error reading custom month ranges", e);
             }
@@ -2130,7 +2184,7 @@
                                                 let start = '';
                                                 let end = '';
                                                 try {
-                                                    const ranges = JSON.parse(localStorage.getItem('customMonthRanges') || '{}');
+                                                    const ranges = window.customMonthRanges || {};
                                                     const key = `${defaultYear}-${d.month}`;
                                                     if (ranges[key]) {
                                                         start = ranges[key].start || '';
@@ -2444,16 +2498,19 @@
             useEffect(() => {
                 if (categories.includes(category)) {
                     if (!isDataCached) setLoading(true);
-                    fetchScrapData(category)
-                        .then(data => {
-                            setChartData(data);
-                            setLoading(false);
-                        })
-                        .catch(err => {
-                            console.error("Failed to fetch data", err);
-                            setChartData(fallbackData);
-                            setLoading(false);
-                        });
+                    
+                    window.initCustomRanges().then(() => {
+                        fetchScrapData(category)
+                            .then(data => {
+                                setChartData(data);
+                                setLoading(false);
+                            })
+                            .catch(err => {
+                                console.error("Failed to fetch data", err);
+                                setChartData(fallbackData);
+                                setLoading(false);
+                            });
+                    });
                 } else {
                     setChartData(fallbackData);
                 }
@@ -2871,7 +2928,7 @@
                                                     let start = '';
                                                     let end = '';
                                                     try {
-                                                        const ranges = JSON.parse(localStorage.getItem('customMonthRanges') || '{}');
+                                                        const ranges = window.customMonthRanges || {};
                                                         const key = `${newYear}-${dateModal.month}`;
                                                         if (ranges[key]) {
                                                             start = ranges[key].start || '';
@@ -2918,9 +2975,9 @@
                                             {lang === 'zh' ? '取消' : 'Cancel'}
                                         </button>
                                         <button 
-                                            onClick={() => {
+                                            onClick={async () => {
                                                 try {
-                                                    const ranges = JSON.parse(localStorage.getItem('customMonthRanges') || '{}');
+                                                    const ranges = { ...window.customMonthRanges };
                                                     const key = `${dateModal.year}-${dateModal.month}`;
                                                     if (!dateModal.start && !dateModal.end) {
                                                         delete ranges[key];
@@ -2932,10 +2989,11 @@
                                                             end: dateModal.end
                                                         };
                                                     }
-                                                    localStorage.setItem('customMonthRanges', JSON.stringify(ranges));
+                                                    await window.saveCustomRanges(ranges);
                                                     setDateModal({ ...dateModal, isOpen: false });
                                                     // Trigger data refresh
                                                     setLoading(true);
+                                                    cachedDataPromise = null;
                                                     fetchScrapData(category).then(data => {
                                                         setChartData(data);
                                                         setLoading(false);

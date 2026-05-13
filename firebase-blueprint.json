@@ -1,0 +1,21 @@
+{
+  "entities": {
+    "CustomMonthRanges": {
+      "title": "Custom Month Ranges",
+      "description": "Global customized month ranges configuration",
+      "type": "object",
+      "properties": {
+        "ranges": {
+          "type": "string",
+          "description": "JSON string of custom month ranges"
+        }
+      }
+    }
+  },
+  "firestore": {
+    "settings/customMonthRanges": {
+      "schema": "CustomMonthRanges",
+      "description": "Settings for custom month ranges, shared globally."
+    }
+  }
+}
