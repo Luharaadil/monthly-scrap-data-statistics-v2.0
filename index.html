@@ -54,14 +54,12 @@
         }
         const { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } = window.Recharts;
 
-        const APP_SCRIPT_EXEC_URL = "https://script.google.com/macros/s/AKfycbwgP4jhdt0rom8RB3r3yvc42Xg-kgB4FgJ2DQTVOFHTir1g6mVFjCAMW5BB0dpbFbSARg/exec";
-
         // Global state for custom month ranges
         window.customMonthRanges = {};
 
         async function initCustomRanges() {
             try {
-                const res = await fetch(`${APP_SCRIPT_EXEC_URL}?action=getCustomRanges&t=${new Date().getTime()}`);
+                const res = await fetch(`/api/getCustomRanges?t=${new Date().getTime()}`);
                 const data = await res.json();
                 if (data.ranges) {
                     window.customMonthRanges = data.ranges;
@@ -71,14 +69,17 @@
                     if (localStr) {
                         window.customMonthRanges = JSON.parse(localStr);
                         // Sync local up to sheets if missing
-                        await fetch(APP_SCRIPT_EXEC_URL, {
+                        await fetch("/api/saveCustomRanges", {
                             method: "POST",
+                            headers: {
+                                "Content-Type": "application/json"
+                            },
                             body: JSON.stringify({ action: "saveCustomRanges", ranges: window.customMonthRanges })
                         });
                     }
                 }
             } catch (e) {
-                console.error("Failed to load ranges from Google Sheet", e);
+                console.warn("Could not fetch latest server ranges (CORS/Network), using local cache");
                 const localStr = localStorage.getItem('customMonthRanges');
                 if (localStr) {
                     window.customMonthRanges = JSON.parse(localStr);
@@ -91,8 +92,11 @@
                 window.customMonthRanges = ranges;
                 const rangesStr = JSON.stringify(ranges);
                 localStorage.setItem('customMonthRanges', rangesStr);
-                await fetch(APP_SCRIPT_EXEC_URL, {
+                await fetch("/api/saveCustomRanges", {
                     method: "POST",
+                    headers: {
+                        "Content-Type": "application/json"
+                    },
                     body: JSON.stringify({ action: "saveCustomRanges", ranges })
                 });
             } catch (e) {
@@ -428,43 +432,21 @@
 
         async function fetchScrapData(category) {
             const cacheBuster = new Date().getTime();
+            const PROD_URL = `/api/getData?startDate=2020-01-01&endDate=2030-12-31`;
             const CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSUYQGdhyZVe--2uuwb4dgfi44pBg_Rk6yj7zdlNmWg0F_rAJg2z2V7gkBWHsGznsg-VsEWAjNeUG5q/pub?output=csv";
-            const RAW_CSV_URL = "https://script.google.com/macros/s/AKfycbwgP4jhdt0rom8RB3r3yvc42Xg-kgB4FgJ2DQTVOFHTir1g6mVFjCAMW5BB0dpbFbSARg/exec?action=getRawScrap";
-            const PROD_URL = "https://script.google.com/macros/s/AKfycbwgP4jhdt0rom8RB3r3yvc42Xg-kgB4FgJ2DQTVOFHTir1g6mVFjCAMW5BB0dpbFbSARg/exec?action=getData&startDate=2020-01-01&endDate=2030-12-31";
             
             try {
                 if (!cachedDataPromise) {
                     cachedDataPromise = Promise.all([
-                        new Promise((resolve, reject) => {
-                            Papa.parse(`${CSV_URL}&t=${cacheBuster}`, { download: true, header: false, complete: resolve, error: reject });
+                        new Promise((resolve) => {
+                            Papa.parse(`${CSV_URL}&t=${cacheBuster}`, { download: true, header: false, complete: resolve, error: () => resolve({ data: [] }) });
                         }),
-                        fetch(`${RAW_CSV_URL}&t=${cacheBuster}`).then(async (res) => {
-                            const text = await res.text();
-                            try {
-                                const jsonData = JSON.parse(text);
-                                if (jsonData.error) throw new Error(jsonData.error);
-                                // If it's a JSON array of arrays (or objects), wrap it so it matches PapaParse output format
-                                return { data: Array.isArray(jsonData) ? jsonData : (jsonData.data || jsonData.items || Object.values(jsonData)) };
-                            } catch (e) {
-                                return new Promise((resolve, reject) => {
-                                    // Fallback to fetching directly from the spreadsheet CSV export if App Script returns error/invalid format
-                                    const SHEET_EXPORT_URL = "https://docs.google.com/spreadsheets/d/1GHwq2tHt0ZDwuGHfTZSov6b2JgfURUKt7c8WLZWPGKs/export?format=csv&gid=359852687";
-                                    Papa.parse(`${SHEET_EXPORT_URL}&t=${cacheBuster}`, { 
-                                        download: true, 
-                                        header: false, 
-                                        complete: resolve, 
-                                        error: (err) => {
-                                            // If spreadsheet export also fails (e.g. not public), fallback to parsing the raw text we first received
-                                            Papa.parse(text, { header: false, complete: resolve, error: reject });
-                                        }
-                                    });
-                                });
-                            }
-                        }),
-                        fetch(`${PROD_URL}&t=${cacheBuster}`).then(r => r.json()).catch(() => ({ summaries: [] })),
-                        new Promise((resolve, reject) => {
+                        // Dummy promise to keep indices consistent (newData)
+                        Promise.resolve({data: []}),
+                        fetch(`${PROD_URL}&t=${cacheBuster}`).then(r => r.json()).catch(() => ({ summaries: [], scraps: [] })),
+                        new Promise((resolve) => {
                             const newCsvUrl = "https://docs.google.com/spreadsheets/d/1GHwq2tHt0ZDwuGHfTZSov6b2JgfURUKt7c8WLZWPGKs/export?format=csv&gid=805147683";
-                            Papa.parse(`${newCsvUrl}&t=${cacheBuster}`, { download: true, header: false, complete: resolve, error: reject });
+                            Papa.parse(`${newCsvUrl}&t=${cacheBuster}`, { download: true, header: false, complete: resolve, error: () => resolve({ data: [] }) });
                         }).catch(() => null)
                     ]).then(res => {
                         isDataCached = true;
@@ -646,25 +628,12 @@
                     });
                 });
 
-                const newRows = newData.data ? newData.data.slice(0) : [];
-                let colDateIdx = 0, colTypeIdx = 6, colSectionIdx = 7, colWeightIdx = 5; // Default mappings for old spreadsheet format
-                const newHeaderRow = newRows.length > 0 ? newRows.shift() : null; // Remove and inspect the first row
-                
-                if (newHeaderRow && Array.isArray(newHeaderRow)) {
-                    const dIdx = newHeaderRow.findIndex(h => String(h).toUpperCase().trim() === 'DATE');
-                    const mIdx = newHeaderRow.findIndex(h => String(h).toUpperCase().trim() === 'MATERIAL' || String(h).toUpperCase().trim() === 'TYPE');
-                    const sIdx = newHeaderRow.findIndex(h => String(h).toUpperCase().trim() === 'SECTION');
-                    const wIdx = newHeaderRow.findIndex(h => String(h).toUpperCase().trim() === 'WEIGHT');
-                    if (dIdx !== -1) colDateIdx = dIdx;
-                    if (mIdx !== -1) colTypeIdx = mIdx;
-                    if (sIdx !== -1) colSectionIdx = sIdx;
-                    if (wIdx !== -1) colWeightIdx = wIdx;
-                }
+                const appScriptScraps = prodDataReq.scraps || [];
 
-                newRows.forEach((row) => {
-                    if (!row || row.length < Math.max(colDateIdx, colTypeIdx, colSectionIdx, colWeightIdx)) return;
+                appScriptScraps.forEach((row) => {
+                    if (!row) return;
                     
-                    const dateStr = String(row[colDateIdx]).trim();
+                    const dateStr = String(row.date).trim();
                     if (!dateStr) return;
                     let month, year;
 
@@ -720,9 +689,9 @@
                         fields.forEach(f => { monthlyDataMap[month][year][f] = 0; });
                     }
 
-                    const weight = parseFloat(String(row[colWeightIdx]).replace(/,/g, '')) || 0;
-                    const scrapType = String(row[colTypeIdx]).trim().toUpperCase();
-                    const section = String(row[colSectionIdx]).trim().toUpperCase();
+                    const weight = parseFloat(String(row.weight).replace(/,/g, '')) || 0;
+                    const scrapType = String(row.material).trim().toUpperCase();
+                    const section = String(row.section).trim().toUpperCase();
 
                     const target = monthlyDataMap[month][year];
 
@@ -1433,70 +1402,22 @@
                 `);
                 newTab.document.close();
 
-                const RAW_CSV_URL = "https://script.google.com/macros/s/AKfycbwgP4jhdt0rom8RB3r3yvc42Xg-kgB4FgJ2DQTVOFHTir1g6mVFjCAMW5BB0dpbFbSARg/exec?action=getRawScrap";
-                const cacheBuster = new Date().getTime();
-                const rawUrlWithCache = `${RAW_CSV_URL}&t=${cacheBuster}`;
-                
                 try {
-                    let dataArray;
+                    let dataArray = [];
                     if (cachedDataPromise) {
                         const cached = await cachedDataPromise;
-                        // Clone the array to avoid mutating cached data
-                        dataArray = [...cached[1].data.map(row => Array.isArray(row) ? [...row] : {...row})];
+                        dataArray = cached[2]?.scraps ? [...cached[2].scraps] : [];
                     } else {
-                        const res = await fetch(rawUrlWithCache);
-                        const text = await res.text();
+                        throw new Error("Data not cached yet");
+                    }
+                    
+                    const filteredData = dataArray.filter((item) => {
                         try {
-                            let jsonData = JSON.parse(text);
-                            if (jsonData.error) throw new Error(jsonData.error);
-                            dataArray = Array.isArray(jsonData) ? jsonData : (jsonData.data || jsonData.items || Object.values(jsonData));
-                        } catch (e) {
-                             dataArray = await new Promise((resolve, reject) => {
-                                const SHEET_EXPORT_URL = "https://docs.google.com/spreadsheets/d/1GHwq2tHt0ZDwuGHfTZSov6b2JgfURUKt7c8WLZWPGKs/export?format=csv&gid=359852687";
-                                Papa.parse(`${SHEET_EXPORT_URL}&t=${cacheBuster}`, {
-                                    download: true,
-                                    header: false,
-                                    complete: (results) => resolve(results.data),
-                                    error: () => {
-                                        Papa.parse(text, {
-                                            header: false,
-                                            complete: (results) => resolve(results.data),
-                                            error: reject
-                                        });
-                                    }
-                                });
-                             });
-                        }
-                    }
-                    
-                    if (!Array.isArray(dataArray)) {
-                        console.error("Data is not an array:", dataArray);
-                        throw new Error("Invalid data format");
-                    }
-                    
-                    // Item eight: filter this array to extract only the objects where the first column matches your month and year string and the column J matches your section string and the column G matches your scrap type string
-                    const headerRow = dataArray.length > 0 ? dataArray[0] : null;
-                    
-                    let colDateIdx = 0, colTypeIdx = 6, colSectionIdx = 7, colWeightIdx = 2; // Defaults
-                    if (headerRow && Array.isArray(headerRow)) {
-                        const dIdx = headerRow.findIndex(h => String(h).toUpperCase().trim() === 'DATE');
-                        const mIdx = headerRow.findIndex(h => { const up = String(h).toUpperCase().trim(); return up === 'MATERIAL' || up === 'TYPE'; });
-                        const sIdx = headerRow.findIndex(h => String(h).toUpperCase().trim() === 'SECTION');
-                        const wIdx = headerRow.findIndex(h => String(h).toUpperCase().trim() === 'WEIGHT');
-                        if (dIdx !== -1) colDateIdx = dIdx;
-                        if (mIdx !== -1) colTypeIdx = mIdx;
-                        if (sIdx !== -1) colSectionIdx = sIdx;
-                        if (wIdx !== -1) colWeightIdx = wIdx;
-                    }
-
-                    const filteredData = dataArray.filter((item, index) => {
-                        try {
-                            if (index === 0) return false; // Skip header for filtering
-                            
-                            const colA = Array.isArray(item) ? item[colDateIdx] : (item['Column A'] || item['Date'] || Object.values(item)[colDateIdx]);
-                            const colG = Array.isArray(item) ? item[colTypeIdx] : (item['Column G'] || item['TYPE'] || item['Material'] || Object.values(item)[colTypeIdx]);
-                            const colH = Array.isArray(item) ? item[colSectionIdx] : (item['Column H'] || item['SECTION'] || item['Section'] || Object.values(item)[colSectionIdx]);
-                            const colW = Array.isArray(item) ? item[colWeightIdx] : (item['Column C'] || item['Weight'] || Object.values(item)[colWeightIdx]);
+                            const colA = item.date;
+                            const colG = item.material;
+                            const colH = item.section;
+                            const colW = item.weight;
+                            const colD = item.reason || item.mainReason;
 
                             const weightVal = parseFloat(String(colW).replace(/,/g, ''));
                             if (isNaN(weightVal) || weightVal === 0) {
@@ -1618,50 +1539,15 @@
                             console.error("Error filtering row:", e);
                             return false;
                         }
-                    });
-                    
-                    if (headerRow && Array.isArray(headerRow)) {
-                        const KEEP_COLS = ['Date', 'Material', 'Weight', 'Reason', 'Sub reason', 'Section'];
-                        let keepIndices = [];
-                        KEEP_COLS.forEach(key => {
-                            let idx = -1;
-                            if (key === 'Sub reason') {
-                                idx = headerRow.findIndex(h => { const up = String(h).toUpperCase(); return up.includes('REASON FOR') || up.includes('MAIN REASON') || up === 'SUB REASON'; });
-                            } else if (key === 'Reason') {
-                                idx = headerRow.findIndex(h => String(h).toUpperCase().trim() === 'REASON');
-                            } else if (key === 'Date') {
-                                idx = headerRow.findIndex(h => String(h).toUpperCase().trim() === 'DATE');
-                            } else if (key === 'Material') {
-                                idx = headerRow.findIndex(h => { const up = String(h).toUpperCase().trim(); return up === 'MATERIAL' || up === 'TYPE'; });
-                            } else if (key === 'Weight') {
-                                idx = headerRow.findIndex(h => String(h).toUpperCase().trim() === 'WEIGHT');
-                            } else if (key === 'Section') {
-                                idx = headerRow.findIndex(h => String(h).toUpperCase().trim() === 'SECTION');
-                            }
-                            keepIndices.push(idx); 
-                        });
-
-                        const originalHeader = [...headerRow];
-                        headerRow.length = 0; // Clear it
-                        keepIndices.forEach((idx, i) => {
-                             if (idx !== -1) headerRow.push(i === 4 ? 'Sub reason' : originalHeader[idx]);
-                             else headerRow.push(KEEP_COLS[i]);
-                        });
-
-                        for (let i = 0; i < filteredData.length; i++) {
-                             const row = filteredData[i];
-                             if (Array.isArray(row)) {
-                                 filteredData[i] = keepIndices.map(idx => {
-                                     return idx !== -1 ? row[idx] : '';
-                                 });
-                             }
-                        }
-                        colDateIdx = 0; // We have restructured, so Date is now at index 0.
-                    }
-
-                    if (headerRow && filteredData.length > 0 && Array.isArray(filteredData[0])) {
-                        filteredData.unshift(headerRow);
-                    }
+                    }).map(item => ({
+                        'Date': item.date || '',
+                        'Section': item.section || '',
+                        'Material': item.material || '',
+                        'Weight': item.weight || item.Weight || 0,
+                        'Reason': item.reason || item.mainReason || item.Reason || item['Reason for Scrap'] || '',
+                        'Machine': item.machineNo || item.machine || '',
+                        'User': item.user || ''
+                    }));
                     
                     // Item nine: update the new browser tab to display the detailed data
                     if (!newTab || newTab.closed) return;
